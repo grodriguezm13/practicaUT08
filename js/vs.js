@@ -1,11 +1,49 @@
+//Se crea el objeto VideoSystem y se le añade el nombre 
+try {
+	var video = VideoSystem.getInstance();
+	video.name = "GUIROMO CHANNEL";
+} catch (error) {
+	console.log("" + error);
+}
 //Array para guardar los recursos del sistema
 var arrayRecursos = new Array();
 //Array para guardar las temporadas del sistema
 var arraySeason = new Array();
 
+//Esta variable controla las version de las bases de datos
+var version = 1;
+//Funcion que crea las bases de datos del sistema
+function crearBase(nombre,array,clave){
+	if(!window.indexedDB){
+		window.alert("El navegador no soporta la base de datos IndexedDB. El contenido que añadas, elimines o modifiques no es permanente");
+	}
+
+	var crearDB = window.indexedDB.open(nombre, version);
+	crearDB.onerror = function(event){
+		window.alert("No se ha podido crear la base de datos "+nombre+"");
+	};
+	crearDB.onupgradeneeded = function(event) {
+		var db = event.target.result;
+
+		// Se usará como clave el campo unico de cada objeto del sistema
+		var objectStore = db.createObjectStore(nombre, { keyPath: clave });
+		//Se crea un indice para poder buscar el objeto segun su clave
+		//objectStore.createIndex(clave, { unique: false });
+
+		// Se usa transaction.oncomplete para asegurarse que la creación del almacén 
+		// haya finalizado antes de añadir los datos en el.
+		objectStore.transaction.oncomplete = function(event) {
+			// Guarda los datos en el almacén recién creado.
+			var addObjectStore = db.transaction(nombre, "readwrite").objectStore(nombre);
+			for (var i in array) {
+				addObjectStore.add(array[i].getObject());
+			}
+		}
+	}
+}//FIn de baseIndexed
+
 //Funcion que inicializa todos los objetos y la relacion entre ellos
-function initPopulate(){
-	
+function initPopulate(){	
 	/* INICIO DE LA CREACION DE OBJETOS */ 
 	//Se crean los objetos person
 	try {
@@ -100,14 +138,6 @@ function initPopulate(){
 
 	/* FIN DE LA CREACION DE OBJETOS */
 	/* INICIO DE LAS RELACIONES MEDIANTE LAS FUNCIONES DE VIDEOSYSTEM */
-
-	//Se crea el objeto VideoSystem y se le añade el nombre 
-	try {
-		var video = VideoSystem.getInstance();
-		video.name = "GUIROMO CHANNEL";
-	} catch (error) {
-		console.log("" + error);
-	}
 	//Añadimos las categorias 
 	try {
 		video.addCategory(category);
@@ -123,6 +153,10 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
+	//Se crea el array con las categorias y se pasa a la funcion
+	var arrayCat = [category,category1,category2,category3,category4,category5,category6,category7,category8,category9];
+	crearBase("categorias",arrayCat,"name");
+
 	//Añadimos los usuarios
 	try {
 		video.addUser(user);
@@ -148,6 +182,10 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
+	//Se crea el array con las producciones y se pasa a la funcion
+	var arrayPro = [movie,movie1,movie2,movie3,movie4,movie5,movie6,serie,serie1,serie2,serie3];
+	crearBase("producciones",arrayPro,"title");
+
 	//Añadimos los actores
 	try {
 		video.addActor(persona);
@@ -158,6 +196,10 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
+	//Se crea el array con los actores y se pasa a la funcion
+	var arrayAct = [persona,persona1,persona4,persona5,persona7];
+	crearBase("actores",arrayAct,"name");
+
 	//Añadimos un director
 	try {
 		video.addDirector(persona2);
@@ -167,6 +209,10 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
+	//Se crea el array con los directores y se pasa a la funcion
+	var arrayDir = [persona2,persona3,persona6,persona8];
+	crearBase("directores",arrayDir,"name");
+
 	//Asignamos una produccion a una categoria
 	try {
 		video.assignCategory(category,movie);
@@ -333,60 +379,68 @@ function showHomePage(){
 	while (tarjetas.firstChild) {
 		tarjetas.removeChild(tarjetas.firstChild);
 	}
-	//Con un iterador recorremos todas las categorias del sistema
-	//Y creamos el menu lateral mientras haya categorias
-	//Al ser singleton e llama al mismo objeto
-	video = VideoSystem.getInstance();
-	var categorias = video.categories;
-	var categoria = categorias.next();
-	while (categoria.done !== true){
-		//Crea las card de la zona central
-		var tarjeta = document.createElement("div");
-		tarjeta.setAttribute("class","col-lg-4 col-md-6 mb-4 zoom");	
-		var borde = document.createElement("div");
-		borde.setAttribute("class","card h-100");
-		var cuerpo = document.createElement("div");
-		cuerpo.setAttribute("class","card-body");
-		var imagen = document.createElement("img");
-		imagen.setAttribute("class","card-img-top");
-		/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
-		imagen.setAttribute("src","img/"+categoria.value.name+".jpg");
-		imagen.setAttribute("alt",categoria.value.name);
-		var buttonTitle = document.createElement("button");
-		//id que sirve para recoger la categoria pulsada en el evento
-		buttonTitle.setAttribute("id","boton"+categoria.value.name);
-		buttonTitle.setAttribute("type","button");
-		buttonTitle.setAttribute("value",categoria.value.name);
-		buttonTitle.setAttribute("class","btn btn-link btn-block");
-		buttonTitle.appendChild(document.createTextNode(categoria.value.name));	
-		var descripCategory = document.createElement("p");
-		descripCategory.setAttribute("class","card-text");
-		/* ESTA LINEA CAMBIA LA DESCRIPCION DE LAS TARJETAS */ 
-		descripCategory.appendChild(document.createTextNode(categoria.value.description));
-		var valoracion = document.createElement("div");
-		valoracion.setAttribute("class","card-footer");
-		var estrellas = document.createElement("small");
-		estrellas.setAttribute("class","text-muted");
-		/* ESTA LINEA CAMBIA LAS ESTRELLAS QUE SE MUESTRAN EN LAS TARJETAS (PROXIMA VERSION)?*/ 
-		estrellas.appendChild(document.createTextNode('Valoracion'));
-		
-		//Se crea la estructura de las tarjetas con appendChild
-		tarjetas.appendChild(tarjeta);
-		tarjeta.appendChild(borde);
-		borde.appendChild(cuerpo);
-		cuerpo.appendChild(imagen);
-		cuerpo.appendChild(buttonTitle);
-		cuerpo.appendChild(descripCategory);
-		cuerpo.appendChild(valoracion);
-		valoracion.appendChild(estrellas);
-	
-		//Añade eventos al hacer click sobre la imagen o sobre el nombre de la categoria
-		buttonTitle.addEventListener("click", showProductions);
 
-        //Pasa a la siguiente categoria
-		categoria = categorias.next();
-	}//FIn del while iterador
+	//Abre la conexion con la base de datos categorias
+	var request = indexedDB.open("categorias");
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;      
+		var objectStore = db.transaction("categorias").objectStore("categorias");
+		//Abre un cursor para recorrer todos los objetos de la base de datos 
+		objectStore.openCursor().onsuccess = function(event) {
+			var cursor = event.target.result;
+			//Si el cursor devuelve un valor pinta las tarjetas
+			if (cursor) {
+				var categoria = new Category (cursor.value.name, cursor.value.description);
+				//Crea las card de la zona central
+				var tarjeta = document.createElement("div");
+				tarjeta.setAttribute("class","col-lg-4 col-md-6 mb-4 zoom");	
+				var borde = document.createElement("div");
+				borde.setAttribute("class","card h-100");
+				var cuerpo = document.createElement("div");
+				cuerpo.setAttribute("class","card-body");
+				var imagen = document.createElement("img");
+				imagen.setAttribute("class","card-img-top");
+				/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
+				imagen.setAttribute("src","img/"+categoria.name+".jpg");
+				imagen.setAttribute("alt",categoria.name);
+				var buttonTitle = document.createElement("button");
+				//id que sirve para recoger la categoria pulsada en el evento
+				buttonTitle.setAttribute("id","boton"+categoria.name);
+				buttonTitle.setAttribute("type","button");
+				buttonTitle.setAttribute("value",categoria.name);
+				buttonTitle.setAttribute("class","btn btn-link btn-block");
+				buttonTitle.appendChild(document.createTextNode(categoria.name));	
+				var descripCategory = document.createElement("p");
+				descripCategory.setAttribute("class","card-text");
+				/* ESTA LINEA CAMBIA LA DESCRIPCION DE LAS TARJETAS */ 
+				descripCategory.appendChild(document.createTextNode(categoria.description));
+				var valoracion = document.createElement("div");
+				valoracion.setAttribute("class","card-footer");
+				var estrellas = document.createElement("small");
+				estrellas.setAttribute("class","text-muted");
+				/* ESTA LINEA CAMBIA LAS ESTRELLAS QUE SE MUESTRAN EN LAS TARJETAS (PROXIMA VERSION)?*/ 
+				estrellas.appendChild(document.createTextNode('Valoracion'));
+				
+				//Se crea la estructura de las tarjetas con appendChild
+				tarjetas.appendChild(tarjeta);
+				tarjeta.appendChild(borde);
+				borde.appendChild(cuerpo);
+				cuerpo.appendChild(imagen);
+				cuerpo.appendChild(buttonTitle);
+				cuerpo.appendChild(descripCategory);
+				cuerpo.appendChild(valoracion);
+				valoracion.appendChild(estrellas);
+			
+				//Añade eventos al hacer click sobre la imagen o sobre el nombre de la categoria
+				buttonTitle.addEventListener("click", showProductions);
 
+				//Pasa a la siguiente categoria
+				cursor.continue();
+			}//Fin del if
+		};//Fin de objectStore.openCursor().onsuccess
+	};//Fin de request.onsuccess
 }//Fin de categoriesMenuPopulate
 
 //Carga el menu lateral con las categorias
@@ -397,28 +451,35 @@ function categoriesMenuPopulate(){
 	while (menu.firstChild) {
 		menu.removeChild(menu.firstChild);
 	}
-
-	//Con un iterador recorremos todas las categorias del sistema
-	//Y creamos el menu lateral mientras haya categorias
-	//Al ser singleton e llama al mismo objeto
-	video = VideoSystem.getInstance();
-	var categorias = video.categories;
-	var categoria = categorias.next();
-	while (categoria.done !== true){
-		//Crea las opciones del menu lateral
-		var li = document.createElement("li");
-		li.setAttribute("class","nav-item");
-		var botonEnlace = document.createElement("button");
-		botonEnlace.setAttribute("class","nav-link btn btn-outline-primary btn-lg btn-block");
-		botonEnlace.setAttribute("value",categoria.value.name);
-		botonEnlace.appendChild(document.createTextNode(categoria.value.name));
-		botonEnlace.addEventListener("click", showProductions);
-		li.appendChild(botonEnlace);
-		menu.appendChild(li);
-		
-        //Pasa a la siguiente categoria
-		categoria = categorias.next();
-	}//FIn del while iterador
+	//Abre la conexion con la base de datos categorias
+	var request = indexedDB.open("categorias", version);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;      
+		var objectStore = db.transaction("categorias").objectStore("categorias");
+		//Abre un cursor para recorrer todos los objetos de la base de datos 
+		objectStore.openCursor().onsuccess = function(event) {
+			var cursor = event.target.result;
+			//Si el cursor devuelve un valor pinta las tarjetas
+			if (cursor) {
+				var categoria = new Category (cursor.value.name, cursor.value.description);
+				//Crea las opciones del menu lateral
+				var li = document.createElement("li");
+				li.setAttribute("class","nav-item");
+				var botonEnlace = document.createElement("button");
+				botonEnlace.setAttribute("class","nav-link btn btn-outline-primary btn-lg btn-block");
+				botonEnlace.setAttribute("value",categoria.name);
+				botonEnlace.appendChild(document.createTextNode(categoria.name));
+				botonEnlace.addEventListener("click", showProductions);
+				li.appendChild(botonEnlace);
+				menu.appendChild(li);
+				//Pasa a la siguiente categoria
+				cursor.continue();
+			}//Fin del if
+		};//Fin de objectStore.openCursor().onsuccess
+	};//Fin de request.onsuccess
+	
 	//Añade funciones a los bntones de actores y directores
 	var btnAct = document.getElementById("btnActores");
 	var btnDir = document.getElementById("btnDirectores");
@@ -1195,7 +1256,9 @@ function showResource(){
 
 //Funcion que llama a todas las funciones que necesita el sistema
 function init(){
+	//Instancia los objetos y los mete en la base de datos
 	initPopulate();
+	//Muestra el contenido de la pagina
 	showHomePage();
 	categoriesMenuPopulate();
 	//Esta funcion esta en el archivo formularios.js

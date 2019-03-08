@@ -326,40 +326,52 @@ function formCategorias(tipo){
 		thDesc.appendChild(document.createTextNode("Tipo"));
 		var tbody = document.createElement("tbody");
 		tbody.setAttribute("id","tablaProducciones");
-		var producciones = video.productions;
-		var produccion = producciones.next();
-		while (produccion.done !== true){
-			var trPro = document.createElement("tr");
-			var tdAdd = document.createElement("td");
-			var add = document.createElement("button");
-			add.setAttribute("type","button");
-			add.setAttribute("class","btn btn-danger");
-			add.setAttribute("value",produccion.value.title);
-			add.appendChild(document.createTextNode("Añadir"));
-			var tdTitulo = document.createElement("td");
-			tdTitulo.appendChild(document.createTextNode(produccion.value.title));
-			var tdTipo = document.createElement("td");
-			var nomTipo = "";
-			if (produccion.value instanceof Movie) {
-				nomTipo = "Pelicula";
-			}else{
-				nomTipo = "Serie";
-			}
-			tdTipo.appendChild(document.createTextNode(nomTipo));
-			tdAdd.appendChild(add);
-			trPro.appendChild(tdAdd);
-			trPro.appendChild(tdTitulo);
-			trPro.appendChild(tdTipo);
-			tbody.appendChild(trPro);
-			//Añade una funcion a cada boton de añadir
-			add.addEventListener("click", function(){
-				var input = document.forms["addCategory"]["producciones"];
-				//Añade al array el nomnbre de boton
-				arrayProducciones.push(this.value);
-				input.value = arrayProducciones.toString();
-			});
-			produccion = producciones.next();
-		}//Fin del while
+		//Abre la conexion con la base de datos producciones
+		var request = indexedDB.open("producciones");
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;      
+			var objectStore = db.transaction("producciones").objectStore("producciones");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore.openCursor().onsuccess = function(event) {
+				var produccion = event.target.result;
+				//Si el cursor devuelve un valor 
+				if (produccion) {
+					var trPro = document.createElement("tr");
+					var tdAdd = document.createElement("td");
+					var add = document.createElement("button");
+					add.setAttribute("type","button");
+					add.setAttribute("class","btn btn-danger");
+					add.setAttribute("value",produccion.value.title);
+					add.appendChild(document.createTextNode("Añadir"));
+					var tdTitulo = document.createElement("td");
+					tdTitulo.appendChild(document.createTextNode(produccion.value.title));
+					var tdTipo = document.createElement("td");
+					var nomTipo = "";
+					if (produccion.value.tipo == "Movie") {
+						nomTipo = "Pelicula";
+					}else{
+						nomTipo = "Serie";
+					}
+					tdTipo.appendChild(document.createTextNode(nomTipo));
+					tdAdd.appendChild(add);
+					trPro.appendChild(tdAdd);
+					trPro.appendChild(tdTitulo);
+					trPro.appendChild(tdTipo);
+					tbody.appendChild(trPro);
+					//Añade una funcion a cada boton de añadir
+					add.addEventListener("click", function(){
+						var input = document.forms["addCategory"]["producciones"];
+						//Añade al array el nomnbre de boton
+						arrayProducciones.push(this.value);
+						input.value = arrayProducciones.toString();
+					});
+					//Pasa a la siguiente categoria
+					produccion.continue();
+				}//Fin del if
+			};//Fin de objectStore.openCursor().onsuccess
+		};//Fin de request.onsuccess
 		var grupoBtn = document.createElement("div");
 		grupoBtn.setAttribute("class","form-group d-flex justify-content-around");
 		var aceptar = document.createElement("button");
@@ -463,28 +475,40 @@ function formCategorias(tipo){
 		thDesc.appendChild(document.createTextNode("Descripcion"));
 		var tbody = document.createElement("tbody");
 		tbody.setAttribute("id","tablaCategorias");
-		var categorias = video.categories;
-		var categoria = categorias.next();
-		while (categoria.done !== true){
-			var trCat = document.createElement("tr");
-			var tdEliminar = document.createElement("td");
-			var eliminar = document.createElement("button");
-			eliminar.setAttribute("type","button");
-			eliminar.setAttribute("class","btn btn-danger");
-			eliminar.setAttribute("value",categoria.value.name);
-			eliminar.appendChild(document.createTextNode("Eliminar"));
-			eliminar.addEventListener("click", deleteCategory);
-			var tdCat = document.createElement("td");
-			tdCat.appendChild(document.createTextNode(categoria.value.name));
-			var tdDesc = document.createElement("td");
-			tdDesc.appendChild(document.createTextNode(categoria.value.description));
-			tdEliminar.appendChild(eliminar);
-			trCat.appendChild(tdEliminar);
-			trCat.appendChild(tdCat);
-			trCat.appendChild(tdDesc);
-			tbody.appendChild(trCat);
-			categoria = categorias.next();
-		}
+		//Abre la conexion con la base de datos categorias
+		var request = indexedDB.open("categorias");
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;      
+			var objectStore = db.transaction("categorias").objectStore("categorias");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore.openCursor().onsuccess = function(event) {
+				var categoria = event.target.result;
+				//Si el cursor devuelve un valor 
+				if (categoria) {
+					var trCat = document.createElement("tr");
+					var tdEliminar = document.createElement("td");
+					var eliminar = document.createElement("button");
+					eliminar.setAttribute("type","button");
+					eliminar.setAttribute("class","btn btn-danger");
+					eliminar.setAttribute("value",categoria.value.name);
+					eliminar.appendChild(document.createTextNode("Eliminar"));
+					eliminar.addEventListener("click", deleteCategory);
+					var tdCat = document.createElement("td");
+					tdCat.appendChild(document.createTextNode(categoria.value.name));
+					var tdDesc = document.createElement("td");
+					tdDesc.appendChild(document.createTextNode(categoria.value.description));
+					tdEliminar.appendChild(eliminar);
+					trCat.appendChild(tdEliminar);
+					trCat.appendChild(tdCat);
+					trCat.appendChild(tdDesc);
+					tbody.appendChild(trCat);
+					//Pasa a la siguiente categoria
+					categoria.continue();
+				}//Fin del if
+			};//Fin de objectStore.openCursor().onsuccess
+		};//Fin de request.onsuccess
 		var grupoBtn = document.createElement("div");
 		grupoBtn.setAttribute("class","form-group d-flex justify-content-around");
 		var cancelar = document.createElement("button");
@@ -590,34 +614,46 @@ function formCategorias(tipo){
 		thNombre.appendChild(document.createTextNode("Nombre completo"));
 		var tbody = document.createElement("tbody");
 		tbody.setAttribute("id","tablaBody");
-		var categorias = video.categories;
-		var categoria = categorias.next();
-		while (categoria.done !== true){
-			var trCat = document.createElement("tr");
-			var tdAdd = document.createElement("td");
-			var add = document.createElement("button");
-			add.setAttribute("type","button");
-			add.setAttribute("class","btn btn-danger");
-			add.setAttribute("value",categoria.value.name);
-			add.appendChild(document.createTextNode("Modificar"));
-			var tdNombre = document.createElement("td");
-			tdNombre.appendChild(document.createTextNode(categoria.value.name));
-			tdNombre.setAttribute("class","col-8");
-			tdAdd.appendChild(add);
-			trCat.appendChild(tdAdd);
-			trCat.appendChild(tdNombre);
-			tbody.appendChild(trCat);
-			//Añade una funcion a cada boton de añadir
-			add.addEventListener("click", function(){
-				var input = document.forms["modCategory"]["categoria"];
-				input.value = this.value;
-				//oculta la tabla
-				document.getElementById("divTabla").style.display = "none";
-				//muestra los campos de la categoria para modificar
-				modifyCategory(this.value);
-			});
-			categoria = categorias.next();
-		}//Fin del while
+		//Abre la conexion con la base de datos categorias
+		var request = indexedDB.open("categorias");
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;      
+			var objectStore = db.transaction("categorias").objectStore("categorias");
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore.openCursor().onsuccess = function(event) {
+				var categoria = event.target.result;
+				//Si el cursor devuelve un valor 
+				if (categoria) {
+					var trCat = document.createElement("tr");
+					var tdAdd = document.createElement("td");
+					var add = document.createElement("button");
+					add.setAttribute("type","button");
+					add.setAttribute("class","btn btn-danger");
+					add.setAttribute("value",categoria.value.name);
+					add.appendChild(document.createTextNode("Modificar"));
+					var tdNombre = document.createElement("td");
+					tdNombre.appendChild(document.createTextNode(categoria.value.name));
+					tdNombre.setAttribute("class","col-8");
+					tdAdd.appendChild(add);
+					trCat.appendChild(tdAdd);
+					trCat.appendChild(tdNombre);
+					tbody.appendChild(trCat);
+					//Añade una funcion a cada boton de añadir
+					add.addEventListener("click", function(){
+						var input = document.forms["modCategory"]["categoria"];
+						input.value = this.value;
+						//oculta la tabla
+						document.getElementById("divTabla").style.display = "none";
+						//muestra los campos de la categoria para modificar
+						modifyCategory(this.value);
+					});
+					//Pasa a la siguiente categoria
+					categoria.continue();
+				}//Fin del if
+			};//Fin de objectStore.openCursor().onsuccess
+		};//Fin de request.onsuccess
 		//Añade los eventos de la tabla
 		$(document).ready(function(){
 			$("#buscador").on("keyup", function() {
@@ -671,6 +707,14 @@ function addNewCategory(name,description){
 		//Añade la categoria al sistema
 		var newCategory = new Category(name,description);
 		video.addCategory(newCategory);
+		/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+		//Añade esa categoria a la base de datos
+		var categoriasDB = indexedDB.open("categorias");
+		categoriasDB.onsuccess = function(event) {
+			var db = event.target.result;
+			var addObjectStore = db.transaction("categorias", "readwrite").objectStore("categorias");
+			addObjectStore.add(newCategory.getObject());
+		};//Fin de categoriasDB.onsuccess
 		//Si hay producciones en el array de producciones las asigna a esa categoria
 		if (arrayProducciones.length != 0) {
 			for (let index = 0; index < arrayProducciones.length; index++) {
@@ -708,7 +752,7 @@ function addNewCategory(name,description){
 		document.getElementById("nombreMal").style.display = "block";
 		document.getElementById("nombreMal").innerHTML = "La categoria con el nombre "+name+" ya existe";
 		document.getElementById("nombreCat").setAttribute("class","form-control border border-danger");
-	}	
+	}
 }//Fin de addNewCategory
 
 //Elimina una categoria seleccionada
@@ -729,9 +773,17 @@ function deleteCategory(){
 		categoria = categorias.next();
 	}//FIn del while iterador
 	try {
-		//Elimina el objeto que se ha encontrado
-		video.removeCategory(eliminar);
-		
+		/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+		//Elimina esa categoria a la base de datos
+		var categoriasDB = window.indexedDB.open("categorias");
+		categoriasDB.onsuccess = function(event) {
+				var db = event.target.result;
+				var deleteObjectStore = db.transaction("categorias", "readwrite").objectStore("categorias");
+				//Se elimina por el key path
+				deleteObjectStore.delete(eliminar.name);
+				//Elimina el objeto que se ha encontrado
+				video.removeCategory(eliminar);
+		};
 		//Selecciona la zona debajo del menu horizontal de edicion y la muestra
 		var contenidoCentral = document.getElementById("contenidoCentral");
 		contenidoCentral.setAttribute("class","d-block");
@@ -741,89 +793,92 @@ function deleteCategory(){
 		categoriesMenuPopulate();
 		showHomePage();
 	} catch (error) {
-		alert(eliminar+" "+ button);
+		
 	}
 }//Fin de deleteCategory
 
 //Añade campos al formulario con los datos de la categoria
 function modifyCategory(cat){
-	var encontrado = false;
 	//Variable para guardar el objeto categoria
 	var objetoCategoria = null;
-	var categorias = video.categories;
-	var categoria = categorias.next();
-	while ((categoria.done !== true) && (!encontrado)){
-		if (categoria.value.name == cat) {
-			objetoCategoria = categoria.value;
-			encontrado = true;
-		}
-		categoria = categorias.next();
-	}//Fin del while
-	//Div en el que se va a añadir la estructura
-	var divModificar = document.getElementById("divModificar");
-	var divInputBtn = document.createElement("div");
-	divInputBtn.setAttribute("id","camposModificar");
-	var grupo1 = document.createElement("div");
-	grupo1.setAttribute("class","form-group");
-	var label1 = document.createElement("label");
-	label1.setAttribute("for","nombreCat2");
-	label1.appendChild(document.createTextNode("Nuevo nombre para la categoria"));
-	var input1 = document.createElement("input");
-	input1.setAttribute("type","text");
-	input1.setAttribute("class","form-control");
-	input1.setAttribute("id","nombreCat2");
-	input1.setAttribute("onblur","validarCampoTexto(this)");
-	input1.setAttribute("value",objetoCategoria.name);
-	var mal1 = document.createElement("small");
-	mal1.setAttribute("class","form-text text-muted");
-	mal1.setAttribute("id","nombreMal");
-	var grupo2 = document.createElement("div");
-	grupo2.setAttribute("class","form-group");
-	var label2 = document.createElement("label");
-	label2.setAttribute("for","descripCat2");
-	label2.appendChild(document.createTextNode("Nueva descripcion para la categoria"));
-	var input2 = document.createElement("input");
-	input2.setAttribute("type","text");
-	input2.setAttribute("class","form-control");
-	input2.setAttribute("id","descripCat2");
-	input2.setAttribute("onblur","validarCampoTexto(this)");
-	input2.setAttribute("value",objetoCategoria.description);
-	var mal2 = document.createElement("small");
-	mal2.setAttribute("id","descMal");
-	mal2.setAttribute("class","form-text text-muted");
-	var grupoBtn = document.createElement("div");
-	grupoBtn.setAttribute("class","form-group d-flex justify-content-around");
-	var aceptar = document.createElement("button");
-	aceptar.setAttribute("type","submit");
-	aceptar.setAttribute("class","btn btn-primary ");
-	aceptar.appendChild(document.createTextNode("Guardar"));
-	var cancelar = document.createElement("button");
-	cancelar.setAttribute("type","button");
-	cancelar.setAttribute("class","btn btn-primary");
-	cancelar.appendChild(document.createTextNode("Cancelar"));
-	//Se añaden los eventos de los botones
-	aceptar.addEventListener("click", function(){
-												return validarModificacionCategoria(objetoCategoria);
-											});
-	cancelar.addEventListener("click", showHomePage);
-	cancelar.addEventListener("click", function(){
-												contenidoCentral.setAttribute("class","d-block");
-												contenidoFormularios.setAttribute("class","d-none");
-											});
-	//Se añade todo al formulario
-	grupo1.appendChild(label1);
-	grupo1.appendChild(input1);
-	grupo1.appendChild(mal1);
-	divInputBtn.appendChild(grupo1);
-	grupo2.appendChild(label2);
-	grupo2.appendChild(input2);
-	grupo2.appendChild(mal2);
-	divInputBtn.appendChild(grupo2);
-	grupoBtn.appendChild(aceptar);
-	grupoBtn.appendChild(cancelar);
-	divInputBtn.appendChild(grupoBtn);
-	//Se añade todo al divMOdificrr del formulario de cat3egorias
-	divModificar.appendChild(divInputBtn);
+	//Abre la conexion con la base de datos categorias
+	var request = indexedDB.open("categorias");
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = request.result;      
+		var objectStore = db.transaction("categorias").objectStore("categorias");
+		var objeto = objectStore.get(cat);
+		//Crea la categoria con el objeto que ha encontrado
+		objeto.onsuccess = function(event) {
+			objetoCategoria = new Category (objeto.result.name, objeto.result.description);
+			//Div en el que se va a añadir la estructura
+			var divModificar = document.getElementById("divModificar");
+			var divInputBtn = document.createElement("div");
+			divInputBtn.setAttribute("id","camposModificar");
+			var grupo1 = document.createElement("div");
+			grupo1.setAttribute("class","form-group");
+			var label1 = document.createElement("label");
+			label1.setAttribute("for","nombreCat2");
+			label1.appendChild(document.createTextNode("Nuevo nombre para la categoria"));
+			var input1 = document.createElement("input");
+			input1.setAttribute("type","text");
+			input1.setAttribute("class","form-control");
+			input1.setAttribute("id","nombreCat2");
+			input1.setAttribute("onblur","validarCampoTexto(this)");
+			input1.setAttribute("value",objetoCategoria.name);
+			var mal1 = document.createElement("small");
+			mal1.setAttribute("class","form-text text-muted");
+			mal1.setAttribute("id","nombreMal");
+			var grupo2 = document.createElement("div");
+			grupo2.setAttribute("class","form-group");
+			var label2 = document.createElement("label");
+			label2.setAttribute("for","descripCat2");
+			label2.appendChild(document.createTextNode("Nueva descripcion para la categoria"));
+			var input2 = document.createElement("input");
+			input2.setAttribute("type","text");
+			input2.setAttribute("class","form-control");
+			input2.setAttribute("id","descripCat2");
+			input2.setAttribute("onblur","validarCampoTexto(this)");
+			input2.setAttribute("value",objetoCategoria.description);
+			var mal2 = document.createElement("small");
+			mal2.setAttribute("id","descMal");
+			mal2.setAttribute("class","form-text text-muted");
+			var grupoBtn = document.createElement("div");
+			grupoBtn.setAttribute("class","form-group d-flex justify-content-around");
+			var aceptar = document.createElement("button");
+			aceptar.setAttribute("type","submit");
+			aceptar.setAttribute("class","btn btn-primary ");
+			aceptar.appendChild(document.createTextNode("Guardar"));
+			var cancelar = document.createElement("button");
+			cancelar.setAttribute("type","button");
+			cancelar.setAttribute("class","btn btn-primary");
+			cancelar.appendChild(document.createTextNode("Cancelar"));
+			//Se añaden los eventos de los botones
+			aceptar.addEventListener("click", function(){
+														return validarModificacionCategoria(objetoCategoria);
+													});
+			cancelar.addEventListener("click", showHomePage);
+			cancelar.addEventListener("click", function(){
+														contenidoCentral.setAttribute("class","d-block");
+														contenidoFormularios.setAttribute("class","d-none");
+													});
+			//Se añade todo al formulario
+			grupo1.appendChild(label1);
+			grupo1.appendChild(input1);
+			grupo1.appendChild(mal1);
+			divInputBtn.appendChild(grupo1);
+			grupo2.appendChild(label2);
+			grupo2.appendChild(input2);
+			grupo2.appendChild(mal2);
+			divInputBtn.appendChild(grupo2);
+			grupoBtn.appendChild(aceptar);
+			grupoBtn.appendChild(cancelar);
+			divInputBtn.appendChild(grupoBtn);
+			//Se añade todo al divMOdificrr del formulario de cat3egorias
+			divModificar.appendChild(divInputBtn);
+		};//Fin de objectStore.onsuccess
+	};//Fin de request.onsuccess	
 }//Fin de addReparto
 
 //Valida los campos del formulario de modifiacion
@@ -838,11 +893,30 @@ function validarModificacionCategoria(objetoCategoria){
 		document.getElementById("nombreMal").innerHTML = "La descripcion no puede estar vacía";
 	}
 	if(nombre != "" && descript != ""){
-		objetoCategoria.name = nombre;
-		objetoCategoria.description = descript;
-		showHomePage();
-		contenidoCentral.setAttribute("class","d-block");
-		contenidoFormularios.setAttribute("class","d-none");
+		/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+		//Abre la conexion con la base de datos categorias
+		var request = indexedDB.open("categorias");
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = request.result;      
+			var objectStore = db.transaction("categorias", "readwrite").objectStore("categorias");
+			var objeto = objectStore.get(objetoCategoria.name);
+			//Crea la categoria con el objeto que ha encontrado
+			objeto.onsuccess = function(event) {
+				var nuevo = objeto.result;
+				nuevo.name = nombre;
+				nuevo.description = descript;
+				//Se manda la actualizacion a la base de datos
+				var update = objectStore.put(nuevo);
+				update.onsuccess = function(){
+					//Si todo ha salido bien vuelve al menu principal
+					showHomePage();
+					contenidoCentral.setAttribute("class","d-block");
+					contenidoFormularios.setAttribute("class","d-none");
+				};//Fin del evento update.onsuccess
+			};//Fin de objeto.onsuccess
+		};//FIn de request.onsuccess
 		return true;
 	}else{
 		return false;

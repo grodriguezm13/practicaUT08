@@ -390,6 +390,8 @@ Resource.prototype.getObject = function(){
 		//Declaracion de atributos
 		var _resource = resource;
 		var _locations = locations;
+		//Se ha creado en la practica 8
+		var tipo = "Movie";
 
 		//Declaracion de getter y setters
 		Object.defineProperty(this, 'resource', {
@@ -419,6 +421,12 @@ Resource.prototype.getObject = function(){
                 }//Fin del if
 			}		
 		});	
+		//Añadido en la practica 8
+		Object.defineProperty(this, 'tipo', {
+			get:function(){
+				return tipo;
+			}		
+        });
     }//Fin de la funcion Movie
     //Definimos la herencia
 	Movie.prototype = Object.create(Production.prototype); 
@@ -428,6 +436,7 @@ Resource.prototype.getObject = function(){
 	}
 	Movie.prototype.getObject = function(){
 		return {
+			tipo: this.tipo,
 			title: this.title,
 			nationality: this.nationality,
 			publication: this.publication,
@@ -451,6 +460,8 @@ Resource.prototype.getObject = function(){
 
 		//Declaracion de atributos
 		var _seasons = seasons || [];
+		//Se ha añadido en la practica 8
+		var tipo = "Serie";
 
 		//Declaracion de getter y setters
 		Object.defineProperty(this, 'season', {
@@ -465,7 +476,13 @@ Resource.prototype.getObject = function(){
                     _seasons = value;
                 }//Fin del if
 			}		
-        });		
+		});		
+		//Añadido en la practica 8
+		Object.defineProperty(this, 'tipo', {
+			get:function(){
+				return tipo;
+			}		
+        });	
     }//Fin de la funcion Serie
     //Definimos la herencia
 	Serie.prototype = Object.create(Production.prototype); 
@@ -475,6 +492,7 @@ Resource.prototype.getObject = function(){
 	}
 	Serie.prototype.getObject = function(){
 		return {
+			tipo: this.tipo,
 			title: this.title,
 			nationality: this.nationality,
 			publication: this.publication,
