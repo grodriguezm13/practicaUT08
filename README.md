@@ -10,6 +10,10 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.1.1
+- Se han separado las funciones de validaciones de campo en un fichero JS aparte yse ha enganchado al HTML
+- Se ha cambiado el nombre del fichero video.html a index.html
+
 Version 0.1
 - Se ha creado una funcion para crear la base de datos y se han añadido los objetos iniciales
 - Se han cambiado todos los iteradores de categorias por llamadas a la base de datos mediante cursores
