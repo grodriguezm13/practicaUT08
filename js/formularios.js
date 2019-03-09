@@ -1,6 +1,5 @@
 /* FUNCIONES AÑADIDAS EN LA PRACTICA 7 */
 /* FUNCIONES PARA LOS FORMULARIOS DE LAS CATEGORIAS */
-//FALTA MODIFICAR
 //Array que recoge las producciones para asignarlas a las nueva categoria
 var arrayProducciones = new Array();
 //Muestra el formulario de las categorias segun el tipo
@@ -569,7 +568,7 @@ function deleteCategory(){
 				var deleteObjectStore = db.transaction("categorias", "readwrite").objectStore("categorias");
 				//Se elimina por el key path
 				deleteObjectStore.delete(eliminar.name);
-				//Elimina el objeto que se ha encontrado
+				//Elimina el objeto que se ha encontrado del sistema
 				video.removeCategory(eliminar);
 		};
 		//Selecciona la zona debajo del menu horizontal de edicion y la muestra
@@ -712,7 +711,6 @@ function validarModificacionCategoria(objetoCategoria){
 }//Fin de validarModificacionCategoria
 
 /* FUNCIONES PARA LOS FORMULARIOS DE LOS ACTORES Y DIRECTORES */
-//FALTA MODIFICAR
 //Muestra el formulario de los actores segun el tipo
 function formActoresDirectores(tipo,rol){
 	//Selecciona la zona debajo del menu horizontal de edicion y la oculta
@@ -898,59 +896,53 @@ function formActoresDirectores(tipo,rol){
 		thNombre.appendChild(document.createTextNode("Nombre completo"));
 		var tbody = document.createElement("tbody");
 		tbody.setAttribute("id","tablaPersonas");
+		var base = "";
 		if (rol == "Actor") {
-			var actores = video.actors;
-			var actor = actores.next();
-			while (actor.done !== true){
-				var trAct = document.createElement("tr");
-				var tdEliminar = document.createElement("td");
-				var eliminar = document.createElement("button");
-				eliminar.setAttribute("type","button");
-				eliminar.setAttribute("class","btn btn-danger");
-				eliminar.setAttribute("value",actor.value.name);
-				eliminar.appendChild(document.createTextNode("Eliminar"));
-				//Se le añade el evento al boton
-				eliminar.addEventListener("click", deleteActor);
-				var tdAct = document.createElement("td");
-				tdAct.setAttribute("class","col-8");
-				//Evita que se muestren null los apellidos vacios
-				if (actor.value.lastName2 == null) {
-					actor.value.lastName2 = " ";
-				}
-				tdAct.appendChild(document.createTextNode(actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2));
-				tdEliminar.appendChild(eliminar);
-				trAct.appendChild(tdEliminar);
-				trAct.appendChild(tdAct);
-				tbody.appendChild(trAct);
-				actor = actores.next();
-			}//Fin del while
-		}else if(rol == "Director"){
-			var directores = video.directors;
-			var director = directores.next();
-			while (director.done !== true){
-				var trDir = document.createElement("tr");
-				var tdEliminar = document.createElement("td");
-				var eliminar = document.createElement("button");
-				eliminar.setAttribute("type","button");
-				eliminar.setAttribute("class","btn btn-danger");
-				eliminar.setAttribute("value",director.value.name);
-				eliminar.appendChild(document.createTextNode("Eliminar"));
-				//Se le añade el evento al boton
-				eliminar.addEventListener("click", deleteDirector);
-				var tdDir = document.createElement("td");
-				tdDir.setAttribute("class","col-8");
-				//Evita que se muestren null los apellidos vacios
-				if (director.value.lastName2 == null) {
-					director.value.lastName2 = " ";
-				}
-				tdDir.appendChild(document.createTextNode(director.value.name+" "+director.value.lastName1+" "+director.value.lastName2));
-				tdEliminar.appendChild(eliminar);
-				trDir.appendChild(tdEliminar);
-				trDir.appendChild(tdDir);
-				tbody.appendChild(trDir);
-				director = directores.next();
-			}//Fin del while
-		}//Fin del if
+			base = "actores";
+		}else{
+			base = "directores";
+		}
+		//Abre la conexion con la base de datos categorias
+		var request = indexedDB.open(base);
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;      
+			var objectStore = db.transaction(base).objectStore(base);
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore.openCursor().onsuccess = function(event) {
+				var persona = event.target.result;
+				//Si el cursor devuelve un valor 
+				if (persona) {
+					var trAct = document.createElement("tr");
+					var tdEliminar = document.createElement("td");
+					var eliminar = document.createElement("button");
+					eliminar.setAttribute("type","button");
+					eliminar.setAttribute("class","btn btn-danger");
+					eliminar.setAttribute("value",persona.value.name+" "+persona.value.lastName1+" "+persona.value.lastName2);
+					eliminar.appendChild(document.createTextNode("Eliminar"));
+					//Se le añade el evento al boton
+					if (rol == "Actor") {
+						eliminar.addEventListener("click", deleteActor);
+					}else{
+						eliminar.addEventListener("click", deleteDirector);
+					}
+					var tdAct = document.createElement("td");
+					tdAct.setAttribute("class","col-8");
+					//Evita que se muestren null los apellidos vacios
+					if (persona.value.lastName2 == null) {
+						persona.value.lastName2 = " ";
+					}
+					tdAct.appendChild(document.createTextNode(persona.value.name+" "+persona.value.lastName1+" "+persona.value.lastName2));
+					tdEliminar.appendChild(eliminar);
+					trAct.appendChild(tdEliminar);
+					trAct.appendChild(tdAct);
+					tbody.appendChild(trAct);
+					//Pasa a la siguiente persona
+					persona.continue();
+				}//Fin del if
+			};//Fin de objectStore.openCursor().onsuccess
+		};//Fin de request.onsuccess
 		var grupoBtn = document.createElement("div");
 		grupoBtn.setAttribute("class","form-group d-flex justify-content-around");
 		var cancelar = document.createElement("button");
@@ -1056,71 +1048,55 @@ function formActoresDirectores(tipo,rol){
 		thNombre.appendChild(document.createTextNode("Nombre completo"));
 		var tbody = document.createElement("tbody");
 		tbody.setAttribute("id","tablaBody");
+		var base = "";
 		if (rol == "Actor") {
-			var actores = video.actors;
-			var actor = actores.next();
-			while (actor.done !== true){
-				var trAct = document.createElement("tr");
-				var tdAdd = document.createElement("td");
-				var add = document.createElement("button");
-				add.setAttribute("type","button");
-				add.setAttribute("class","btn btn-danger");
-				if (actor.value.lastName2 == null) {
-					actor.value.lastName2 = " ";
-				}
-				add.setAttribute("value",actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2);
-				add.appendChild(document.createTextNode("Modificar"));
-				//Se le añade el evento al boton
-				add.addEventListener("click", function(){
-					var input = document.forms["modActorDirector"]["Person"];
-					input.value = this.value;
-					//oculta la tabla
-					document.getElementById("divTabla").style.display = "none";
-					//muestra los campos de la categoria para modificar
-					modifyPerson(this.value,rol);
-				});
-				var tdAct = document.createElement("td");
-				tdAct.setAttribute("class","col-8");
-				tdAct.appendChild(document.createTextNode(actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2));
-				tdAdd.appendChild(add);
-				trAct.appendChild(tdAdd);
-				trAct.appendChild(tdAct);
-				tbody.appendChild(trAct);
-				actor = actores.next();
-			}//Fin del while
-		}else if(rol == "Director"){
-			var directores = video.directors;
-			var director = directores.next();
-			while (director.done !== true){
-				var trDir = document.createElement("tr");
-				var tdAdd = document.createElement("td");
-				var add = document.createElement("button");
-				add.setAttribute("type","button");
-				add.setAttribute("class","btn btn-danger");
-				if (director.value.lastName2 == null) {
-					director.value.lastName2 = " ";
-				}
-				add.setAttribute("value",director.value.name+" "+director.value.lastName1+" "+director.value.lastName2);
-				add.appendChild(document.createTextNode("Modificar"));
-				//Se le añade el evento al boton
-				add.addEventListener("click", function(){
-					var input = document.forms["modActorDirector"]["Person"];
-					input.value = this.value;
-					//oculta la tabla
-					document.getElementById("divTabla").style.display = "none";
-					//muestra los campos de la categoria para modificar
-					modifyPerson(this.value,rol);
-				});
-				var tdDir = document.createElement("td");
-				tdDir.setAttribute("class","col-8");
-				tdDir.appendChild(document.createTextNode(director.value.name+" "+director.value.lastName1+" "+director.value.lastName2));
-				tdAdd.appendChild(add);
-				trDir.appendChild(tdAdd);
-				trDir.appendChild(tdDir);
-				tbody.appendChild(trDir);
-				director = directores.next();
-			}//Fin del while
-		}//Fin del if
+			base = "actores";
+		}else{
+			base = "directores";
+		}
+		//Abre la conexion con la base de datos categorias
+		var request = indexedDB.open(base);
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = event.target.result;      
+			var objectStore = db.transaction(base).objectStore(base);
+			//Abre un cursor para recorrer todos los objetos de la base de datos 
+			objectStore.openCursor().onsuccess = function(event) {
+				var persona = event.target.result;
+				//Si el cursor devuelve un valor 
+				if (persona) {
+					var trAct = document.createElement("tr");
+					var tdAdd = document.createElement("td");
+					var add = document.createElement("button");
+					add.setAttribute("type","button");
+					add.setAttribute("class","btn btn-danger");
+					if (persona.value.lastName2 == null) {
+						persona.value.lastName2 = " ";
+					}
+					add.setAttribute("value",persona.value.name+" "+persona.value.lastName1+" "+persona.value.lastName2);
+					add.appendChild(document.createTextNode("Modificar"));
+					//Se le añade el evento al boton
+					add.addEventListener("click", function(){
+						var input = document.forms["modActorDirector"]["Person"];
+						input.value = this.value;
+						//oculta la tabla
+						document.getElementById("divTabla").style.display = "none";
+						//muestra los campos de la categoria para modificar
+						modifyPerson(this.value,rol);
+					});
+					var tdAct = document.createElement("td");
+					tdAct.setAttribute("class","col-8");
+					tdAct.appendChild(document.createTextNode(persona.value.name+" "+persona.value.lastName1+" "+persona.value.lastName2));
+					tdAdd.appendChild(add);
+					trAct.appendChild(tdAdd);
+					trAct.appendChild(tdAct);
+					tbody.appendChild(trAct);
+					//Pasa a la siguiente persona
+					persona.continue();
+				}//Fin del if
+			};//Fin de objectStore.openCursor().onsuccess
+		};//Fin de request.onsuccess
 		//Añade los eventos de la tabla
 		$(document).ready(function(){
 			$("#buscador").on("keyup", function() {
@@ -1188,19 +1164,33 @@ function validarActoresDirectores(rol){
 		}
 		
 		var fecha = new Date(born.value.split("/")[1]+"/"+born.value.split("/")[0]+"/"+born.value.split("/")[2]);
-		if (rol == "Actor") {
-			addNewActor(name.value, lastName1.value, fecha, apellido2, imagen);
-		}else if(rol == "Director"){
-			addNewDirector(name.value, lastName1.value, fecha, apellido2, imagen);
-		}
+		addNewPerson(rol,name.value, lastName1.value, fecha, apellido2, imagen);
 	}//Fin del if
-}//FIn de validarActores
+}//FIn de validarActoresDirectores
 
 //Añade al video system la persona nueva y la añade como actor, si existe no deja añadir
-function addNewActor(name, lastName1, born, lastName2, picture){
+function addNewPerson(rol,name, lastName1, born, lastName2, picture){
 	try {
+		//Se crea el objeto persona
 		var newPerson = new Person(name, lastName1, born, lastName2, picture);
-		video.addActor(newPerson);
+		/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+		var base = "";
+		if (rol == "Actor") {
+			//Si el rol es actor pone la variable base con actor y añade el actor al sistema
+			base = "actores";
+			video.addActor(newPerson);
+		}else{
+			//Si el rol es director pone la variable base con director y añade el director al sistema
+			base = "directores";
+			video.addDirector(newPerson);
+		}
+		//Añade esa person a la base de datos
+		var personDB = indexedDB.open(base);
+		personDB.onsuccess = function(event) {
+			var db = event.target.result;
+			var addObjectStore = db.transaction(base, "readwrite").objectStore(base);
+			addObjectStore.add(newPerson.getObject());
+		};//Fin de personDB.onsuccess
 		//Selecciona la zona debajo del menu horizontal de edicion y la muestra
 		var contenidoCentral = document.getElementById("contenidoCentral");
 		contenidoCentral.setAttribute("class","d-block");
@@ -1210,14 +1200,14 @@ function addNewActor(name, lastName1, born, lastName2, picture){
 		showHomePage();
 		categoriesMenuPopulate();
 	} catch (error) {
-		document.getElementById("nombreMal").innerHTML = "El actor "+name+" "+lastName1+" ya existe";
+		document.getElementById("nombreMal").innerHTML = "El "+rol+" "+name+" "+lastName1+" ya existe";
 		document.getElementById("nombreMal").style.display = "block";
 		document.getElementById("nombreActor").setAttribute("class","form-control border border-danger");
-		document.getElementById("lastName1Mal").innerHTML = "El actor "+name+" "+lastName1+" ya existe";
+		document.getElementById("lastName1Mal").innerHTML = "El "+rol+" "+name+" "+lastName1+" ya existe";
 		document.getElementById("lastName1Mal").style.display = "block";
 		document.getElementById("lastName1").setAttribute("class","form-control border border-danger");
 	}	
-}//Fin de addNewActor
+}//Fin de addNewPerson
 
 //Elimina un actor seleccionado
 function deleteActor(){
@@ -1228,78 +1218,72 @@ function deleteActor(){
 	var actores = video.actors;
 	var actor = actores.next();
 	while ((actor.done !== true) && (!encontrado)){
-		if (actor.value.name == act) {
+		if (actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2 == act) {
 			//Si la encuentra asigna el objeto con ese nombre a la variable eliminar
 			eliminar = actor.value;
 			encontrado = true;
-		}//Fin del if que compara el nombre de la categoria con el valor del select
+		}//Fin del if que compara el nombre del actor con el valor del boton
 		actor = actores.next();
 	}
 	try {
-		//Elimina el objeto que se ha encontrado
-		video.removeActor(eliminar);
-		//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-		var contenidoCentral = document.getElementById("contenidoCentral");
-		contenidoCentral.setAttribute("class","d-block");
-		//Selecciona la zona para poner los formularios
-		var contenidoFormularios = document.getElementById("contenidoFormularios");
-		contenidoFormularios.setAttribute("class","d-none");
-		showHomePage();
+		/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+		//Elimina ese actor de la base de datos
+		var actoresDB = window.indexedDB.open("actores");
+		actoresDB.onsuccess = function(event) {
+				var db = event.target.result;
+				var deleteObjectStore = db.transaction("actores", "readwrite").objectStore("actores");
+				//Se elimina por el key path
+				deleteObjectStore.delete(eliminar.completo);
+				//Elimina el objeto que se ha encontrado del sistema
+				video.removeActor(eliminar);
+				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
+				var contenidoCentral = document.getElementById("contenidoCentral");
+				contenidoCentral.setAttribute("class","d-block");
+				//Selecciona la zona para poner los formularios
+				var contenidoFormularios = document.getElementById("contenidoFormularios");
+				contenidoFormularios.setAttribute("class","d-none");
+				showHomePage();
+		};
 	} catch (error) {
 		
 	}
 }//Fin de deleteActor
 
-//Añade al video system la persona nueva y la añade como director, si existe no deja añadir
-function addNewDirector(name, lastName1, born, lastName2, picture){
-	try {
-		var newPerson = new Person(name, lastName1, born, lastName2, picture);
-		video.addDirector(newPerson);
-		//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-		var contenidoCentral = document.getElementById("contenidoCentral");
-		contenidoCentral.setAttribute("class","d-block");
-		//Selecciona la zona para poner los formularios
-		var contenidoFormularios = document.getElementById("contenidoFormularios");
-		contenidoFormularios.setAttribute("class","d-none");
-		showHomePage();
-		categoriesMenuPopulate();
-	} catch (error) {
-		document.getElementById("nombreMal").innerHTML = "El director "+name+" "+lastName1+" ya existe";
-		document.getElementById("nombreMal").style.display = "block";
-		document.getElementById("nombreActor").setAttribute("class","form-control border border-danger");
-		document.getElementById("lastName1Mal").innerHTML = "El director "+name+" "+lastName1+" ya existe";
-		document.getElementById("lastName1Mal").style.display = "block";
-		document.getElementById("lastName1").setAttribute("class","form-control border border-danger");
-	}	
-}//Fin de addNewDirector
-
 //Elimina un director seleccionado
 function deleteDirector(){
-	//Recoge el value del boton pulsado
-	var dir = this.value;
+	//Recoge el valor del boton pulsado
+	var act = this.value;
 	var eliminar = null;
 	var encontrado = false;
 	var directores = video.directors;
 	var director = directores.next();
 	while ((director.done !== true) && (!encontrado)){
-		if (director.value.name == dir) {
-			//Si lo encuentra asigna el objeto con ese nombre a la variable eliminar
+		if (director.value.name+" "+director.value.lastName1+" "+director.value.lastName2 == act) {
+			//Si la encuentra asigna el objeto con ese nombre a la variable eliminar
 			eliminar = director.value;
 			encontrado = true;
-		}//Fin del if que compara el nombre del director con el valor del select
+		}//Fin del if que compara el nombre del director con el valor del boton
 		director = directores.next();
 	}
 	try {
-		//Elimina el objeto que se ha encontrado
-		video.removeDirector(eliminar);
-		//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-		var contenidoCentral = document.getElementById("contenidoCentral");
-		contenidoCentral.setAttribute("class","d-block");
-		//Selecciona la zona para poner los formularios
-		var contenidoFormularios = document.getElementById("contenidoFormularios");
-		contenidoFormularios.setAttribute("class","d-none");
-		showHomePage();
-		categoriesMenuPopulate();
+		/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+		//Elimina ese director de la base de datos
+		var directoresDB = window.indexedDB.open("directores");
+		directoresDB.onsuccess = function(event) {
+				var db = event.target.result;
+				var deleteObjectStore = db.transaction("directores", "readwrite").objectStore("directores");
+				//Se elimina por el key path
+				deleteObjectStore.delete(eliminar.completo);
+				//Elimina el objeto que se ha encontrado del sistema
+				video.removeDirector(eliminar);
+				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
+				var contenidoCentral = document.getElementById("contenidoCentral");
+				contenidoCentral.setAttribute("class","d-block");
+				//Selecciona la zona para poner los formularios
+				var contenidoFormularios = document.getElementById("contenidoFormularios");
+				contenidoFormularios.setAttribute("class","d-none");
+				showHomePage();
+		};
 	} catch (error) {
 		
 	}
@@ -1307,164 +1291,155 @@ function deleteDirector(){
 
 //Añade campos al formulario con los datos del actor
 function modifyPerson(person, rol){
-	var encontrado = false;
 	//Variable para guardar el objeto categoria
 	var objetoPerson = null;
+	var base = "";
 	if (rol == "Actor") {
-		var actores = video.actors;
-		var actor = actores.next();
-		while ((actor.done !== true) && (!encontrado)){
-			if(actor.value.lastName2 == null){
-				actor.value.lastName2 = "";
-			}
-			if (actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2 == person) {
-				objetoPerson = actor.value;
-				encontrado = true;
-			}
-			actor = actores.next();
-		}//Fin del while
-	}else if(rol == "Director"){
-		var directores = video.directors;
-		var director = directores.next();
-		while ((director.done !== true) && (!encontrado)){
-			if(director.value.lastName2 == null){
-				director.value.lastName2 = "";
-			}
-			if (director.value.name+" "+director.value.lastName1+" "+director.value.lastName2 == person) {
-				objetoPerson = director.value;
-				encontrado = true;
-			}
-			director = directores.next();
-		}//Fin del while
-	}//Fin del if
-	//Div en el que se va a añadir la estructura
-	var divModificar = document.getElementById("divModificar");
-	var divInputBtn = document.createElement("div");
-	divInputBtn.setAttribute("id","camposModificar");
-	//NOMBRE DEL ACTOR/DIRECTOR
-	var grupo1 = document.createElement("div");
-	grupo1.setAttribute("class","form-group");
-	var labelName = document.createElement("label");
-	labelName.setAttribute("for","nombrePerson");
-	labelName.appendChild(document.createTextNode("Nombre*"));
-	var inputName = document.createElement("input");
-	inputName.setAttribute("type","text");
-	inputName.setAttribute("class","form-control");
-	inputName.setAttribute("id","nombrePerson");
-	inputName.setAttribute("onblur","validarCampoTexto(this)");
-	inputName.setAttribute("value",objetoPerson.name);
-	var malName = document.createElement("small");
-	malName.setAttribute("class","form-text text-muted");
-	malName.setAttribute("id","nombreMal");
-	//APELLIDO1 DEL ACTOR/DIRECTOR
-	var grupo2 = document.createElement("div");
-	grupo2.setAttribute("class","form-group");
-	var labelLastName1 = document.createElement("label");
-	labelLastName1.setAttribute("for","lastName12");
-	labelLastName1.appendChild(document.createTextNode("Primer apellido*"));
-	var inputLastName1 = document.createElement("input");
-	inputLastName1.setAttribute("type","text");
-	inputLastName1.setAttribute("class","form-control");
-	inputLastName1.setAttribute("id","lastName12");
-	inputLastName1.setAttribute("onblur","validarCampoTexto(this)");
-	inputLastName1.setAttribute("value",objetoPerson.lastName1);
-	var malLastName1 = document.createElement("small");
-	malLastName1.setAttribute("class","form-text text-muted");
-	malLastName1.setAttribute("id","lastName1Mal");
-	//APELLIDO2 DEL ACTOR/DIRECTOR
-	var grupo3 = document.createElement("div");
-	grupo3.setAttribute("class","form-group");
-	var labelLastName2 = document.createElement("label");
-	labelLastName2.setAttribute("for","lastName22");
-	labelLastName2.appendChild(document.createTextNode("Segundo apellido"));
-	var inputLastName2 = document.createElement("input");
-	inputLastName2.setAttribute("type","text");
-	inputLastName2.setAttribute("class","form-control");
-	inputLastName2.setAttribute("id","lastName22");
-	inputLastName2.setAttribute("onblur","validarCampoTexto(this)");
-	inputLastName2.setAttribute("value",objetoPerson.lastName2);
-	var malLastName2 = document.createElement("small");
-	malLastName2.setAttribute("class","form-text text-muted");
-	malLastName2.setAttribute("id","lastName2Mal");
-	//FECHA DE NACIMIENTO DEL ACTOR/DIRECTOR
-	var grupo4 = document.createElement("div");
-	grupo4.setAttribute("class","form-group");
-	var labelBorn = document.createElement("label");
-	labelBorn.setAttribute("for","born");
-	labelBorn.appendChild(document.createTextNode("Fecha de nacimiento*"));
-	var inputBorn = document.createElement("input");
-	inputBorn.setAttribute("type","text");
-	inputBorn.setAttribute("class","form-control");
-	inputBorn.setAttribute("id","born2");
-	inputBorn.setAttribute("onblur","validarCampoFecha(this)");
-	inputBorn.setAttribute("value",objetoPerson.born.toLocaleDateString());
-	var malBorn = document.createElement("small");
-	malBorn.setAttribute("class","form-text text-muted");
-	malBorn.setAttribute("id","bornMal");
-	//IMAGEN DEL ACTOR/DIRECTOR
-	var grupo5 = document.createElement("div");
-	grupo5.setAttribute("class","form-group");
-	var labelPicture = document.createElement("label");
-	labelPicture.setAttribute("for","picture");
-	labelPicture.appendChild(document.createTextNode("Ruta de la imagen"));
-	var inputPicture = document.createElement("input");
-	inputPicture.setAttribute("type","text");
-	inputPicture.setAttribute("class","form-control");
-	inputPicture.setAttribute("id","picture2");
-	inputPicture.setAttribute("onblur","validarCampoRutaObligatorio(this)");
-	inputPicture.setAttribute("value",objetoPerson.picture);
-	var malPicture = document.createElement("small");
-	malPicture.setAttribute("class","form-text text-muted");
-	malPicture.setAttribute("id","pictureMal");
-	var grupoBtn = document.createElement("div");
-	grupoBtn.setAttribute("class","form-group d-flex justify-content-around");
-	var aceptar = document.createElement("button");
-	aceptar.setAttribute("type","submit");
-	aceptar.setAttribute("class","btn btn-primary ");
-	aceptar.appendChild(document.createTextNode("Guardar"));
-	var cancelar = document.createElement("button");
-	cancelar.setAttribute("type","button");
-	cancelar.setAttribute("class","btn btn-primary");
-	cancelar.appendChild(document.createTextNode("Cancelar"));
-	//Se añaden los eventos de los botones
-	aceptar.addEventListener("click", function(){
-												return validarModificacionPerson(objetoPerson);
-											});
-	cancelar.addEventListener("click", showHomePage);
-	cancelar.addEventListener("click", function(){
-												contenidoCentral.setAttribute("class","d-block");
-												contenidoFormularios.setAttribute("class","d-none");
-											});
-	//Se añade todo al formulario
-	grupo1.appendChild(labelName);
-	grupo1.appendChild(inputName);
-	grupo1.appendChild(malName);
-	grupo2.appendChild(labelLastName1);
-	grupo2.appendChild(inputLastName1);
-	grupo2.appendChild(malLastName1);
-	grupo3.appendChild(labelLastName2);
-	grupo3.appendChild(inputLastName2);
-	grupo3.appendChild(malLastName2);
-	grupo4.appendChild(labelBorn);
-	grupo4.appendChild(inputBorn);
-	grupo4.appendChild(malBorn);
-	grupo5.appendChild(labelPicture);
-	grupo5.appendChild(inputPicture);
-	grupo5.appendChild(malPicture);
-	divInputBtn.appendChild(grupo1);
-	divInputBtn.appendChild(grupo2);
-	divInputBtn.appendChild(grupo3);
-	divInputBtn.appendChild(grupo4);
-	divInputBtn.appendChild(grupo5);
-	grupoBtn.appendChild(aceptar);
-	grupoBtn.appendChild(cancelar);
-	divInputBtn.appendChild(grupoBtn);
-	//Se añade todo al divMOdificar del formulario de personas
-	divModificar.appendChild(divInputBtn);
+		base = "actores";
+	}else{
+		base = "directores";
+	}
+	//Abre la conexion con la base de datos categorias
+	var request = indexedDB.open(base);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = request.result;      
+		var objectStore = db.transaction(base).objectStore(base);
+		var objeto = objectStore.get(person);
+		//Crea la persona con el objeto que ha encontrado
+		objeto.onsuccess = function(event) {
+			objetoPerson = new Person (objeto.result.name, objeto.result.lastName1, objeto.result.born,objeto.result.lastName2, objeto.result.picture);
+			//Div en el que se va a añadir la estructura
+			var divModificar = document.getElementById("divModificar");
+			var divInputBtn = document.createElement("div");
+			divInputBtn.setAttribute("id","camposModificar");
+			//NOMBRE DEL ACTOR/DIRECTOR
+			var grupo1 = document.createElement("div");
+			grupo1.setAttribute("class","form-group");
+			var labelName = document.createElement("label");
+			labelName.setAttribute("for","nombrePerson");
+			labelName.appendChild(document.createTextNode("Nombre*"));
+			var inputName = document.createElement("input");
+			inputName.setAttribute("type","text");
+			inputName.setAttribute("class","form-control");
+			inputName.setAttribute("id","nombrePerson");
+			inputName.setAttribute("onblur","validarCampoTexto(this)");
+			inputName.setAttribute("value",objetoPerson.name);
+			var malName = document.createElement("small");
+			malName.setAttribute("class","form-text text-muted");
+			malName.setAttribute("id","nombreMal");
+			//APELLIDO1 DEL ACTOR/DIRECTOR
+			var grupo2 = document.createElement("div");
+			grupo2.setAttribute("class","form-group");
+			var labelLastName1 = document.createElement("label");
+			labelLastName1.setAttribute("for","lastName12");
+			labelLastName1.appendChild(document.createTextNode("Primer apellido*"));
+			var inputLastName1 = document.createElement("input");
+			inputLastName1.setAttribute("type","text");
+			inputLastName1.setAttribute("class","form-control");
+			inputLastName1.setAttribute("id","lastName12");
+			inputLastName1.setAttribute("onblur","validarCampoTexto(this)");
+			inputLastName1.setAttribute("value",objetoPerson.lastName1);
+			var malLastName1 = document.createElement("small");
+			malLastName1.setAttribute("class","form-text text-muted");
+			malLastName1.setAttribute("id","lastName1Mal");
+			//APELLIDO2 DEL ACTOR/DIRECTOR
+			var grupo3 = document.createElement("div");
+			grupo3.setAttribute("class","form-group");
+			var labelLastName2 = document.createElement("label");
+			labelLastName2.setAttribute("for","lastName22");
+			labelLastName2.appendChild(document.createTextNode("Segundo apellido"));
+			var inputLastName2 = document.createElement("input");
+			inputLastName2.setAttribute("type","text");
+			inputLastName2.setAttribute("class","form-control");
+			inputLastName2.setAttribute("id","lastName22");
+			inputLastName2.setAttribute("onblur","validarCampoTexto(this)");
+			inputLastName2.setAttribute("value",objetoPerson.lastName2);
+			var malLastName2 = document.createElement("small");
+			malLastName2.setAttribute("class","form-text text-muted");
+			malLastName2.setAttribute("id","lastName2Mal");
+			//FECHA DE NACIMIENTO DEL ACTOR/DIRECTOR
+			var grupo4 = document.createElement("div");
+			grupo4.setAttribute("class","form-group");
+			var labelBorn = document.createElement("label");
+			labelBorn.setAttribute("for","born");
+			labelBorn.appendChild(document.createTextNode("Fecha de nacimiento*"));
+			var inputBorn = document.createElement("input");
+			inputBorn.setAttribute("type","text");
+			inputBorn.setAttribute("class","form-control");
+			inputBorn.setAttribute("id","born2");
+			inputBorn.setAttribute("onblur","validarCampoFecha(this)");
+			inputBorn.setAttribute("value",objetoPerson.born.toLocaleDateString());
+			var malBorn = document.createElement("small");
+			malBorn.setAttribute("class","form-text text-muted");
+			malBorn.setAttribute("id","bornMal");
+			//IMAGEN DEL ACTOR/DIRECTOR
+			var grupo5 = document.createElement("div");
+			grupo5.setAttribute("class","form-group");
+			var labelPicture = document.createElement("label");
+			labelPicture.setAttribute("for","picture");
+			labelPicture.appendChild(document.createTextNode("Ruta de la imagen"));
+			var inputPicture = document.createElement("input");
+			inputPicture.setAttribute("type","text");
+			inputPicture.setAttribute("class","form-control");
+			inputPicture.setAttribute("id","picture2");
+			inputPicture.setAttribute("onblur","validarCampoRutaObligatorio(this)");
+			inputPicture.setAttribute("value",objetoPerson.picture);
+			var malPicture = document.createElement("small");
+			malPicture.setAttribute("class","form-text text-muted");
+			malPicture.setAttribute("id","pictureMal");
+			var grupoBtn = document.createElement("div");
+			grupoBtn.setAttribute("class","form-group d-flex justify-content-around");
+			var aceptar = document.createElement("button");
+			aceptar.setAttribute("type","submit");
+			aceptar.setAttribute("class","btn btn-primary ");
+			aceptar.appendChild(document.createTextNode("Guardar"));
+			var cancelar = document.createElement("button");
+			cancelar.setAttribute("type","button");
+			cancelar.setAttribute("class","btn btn-primary");
+			cancelar.appendChild(document.createTextNode("Cancelar"));
+			//Se añaden los eventos de los botones
+			aceptar.addEventListener("click", function(){
+														return validarModificacionPerson(rol,objetoPerson);
+													});
+			cancelar.addEventListener("click", showHomePage);
+			cancelar.addEventListener("click", function(){
+														contenidoCentral.setAttribute("class","d-block");
+														contenidoFormularios.setAttribute("class","d-none");
+													});
+			//Se añade todo al formulario
+			grupo1.appendChild(labelName);
+			grupo1.appendChild(inputName);
+			grupo1.appendChild(malName);
+			grupo2.appendChild(labelLastName1);
+			grupo2.appendChild(inputLastName1);
+			grupo2.appendChild(malLastName1);
+			grupo3.appendChild(labelLastName2);
+			grupo3.appendChild(inputLastName2);
+			grupo3.appendChild(malLastName2);
+			grupo4.appendChild(labelBorn);
+			grupo4.appendChild(inputBorn);
+			grupo4.appendChild(malBorn);
+			grupo5.appendChild(labelPicture);
+			grupo5.appendChild(inputPicture);
+			grupo5.appendChild(malPicture);
+			divInputBtn.appendChild(grupo1);
+			divInputBtn.appendChild(grupo2);
+			divInputBtn.appendChild(grupo3);
+			divInputBtn.appendChild(grupo4);
+			divInputBtn.appendChild(grupo5);
+			grupoBtn.appendChild(aceptar);
+			grupoBtn.appendChild(cancelar);
+			divInputBtn.appendChild(grupoBtn);
+			//Se añade todo al divMOdificar del formulario de personas
+			divModificar.appendChild(divInputBtn);
+		};//Fin de objectStore.onsuccess
+	};//Fin de request.onsuccess		
 }//Fin de modifyPerson
 
 //Valida los campos del formulario de modifiacion
-function validarModificacionPerson(objetoPerson){
+function validarModificacionPerson(rol,objetoPerson){
 	//Se usan los setter para modificar los valores
 	var nombre = document.forms['modActorDirector']['nombrePerson'].value
 	var lastName1 = document.forms['modActorDirector']['lastName12'].value;
@@ -1488,16 +1463,43 @@ function validarModificacionPerson(objetoPerson){
 		document.getElementById("pictureMal").innerHTML = "La ruta de la imagen no puede estar vacía";
 	}
 	if(nombre != "" && lastName1 != "" && lastName2 != "" && born != "" && picture != ""){
-		objetoPerson.name = nombre;
-		objetoPerson.lastName1 = lastName1;
-		objetoPerson.lastName2 = lastName2;
-		var fecha = new Date(born.split("/")[1]+"/"+born.split("/")[0]+"/"+born.split("/")[2]);
-		objetoPerson.born = fecha;
-		objetoPerson.picture = picture;
-		showHomePage();
-		contenidoCentral.setAttribute("class","d-block");
-		contenidoFormularios.setAttribute("class","d-none");
-		return true;
+		/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+		//Abre la conexion con la base de datos categorias
+		var base = "";
+		if (rol == "Actor") {
+			base = "actores";
+		}else{
+			base = "directores";
+		}
+		var request = indexedDB.open(base);
+		//Si ha salido bien
+		request.onsuccess = function(event) {
+			//Asigna el resultado a la variable db, que tiene la base de datos 
+			var db = request.result;      
+			var objectStore = db.transaction(base, "readwrite").objectStore(base);
+			var objeto = objectStore.get(objetoPerson.completo);
+			//Crea la categoria con el objeto que ha encontrado
+			objeto.onsuccess = function(event) {
+				//Modifica el objeto de la base de datos
+				var nuevo = objeto.result;
+				nuevo.name = nombre;
+				nuevo.lastName1 = lastName1;
+				nuevo.lastName2 = lastName2;
+				var fecha = new Date(born.split("/")[1]+"/"+born.split("/")[0]+"/"+born.split("/")[2]);
+				nuevo.born = fecha;
+				nuevo.picture = picture;
+				nuevo.completo = nombre+" "+lastName1+" "+lastName2;
+				//Se manda la actualizacion a la base de datos
+				var update = objectStore.put(nuevo);
+				update.onsuccess = function(){
+					//Si todo ha salido bien vuelve al menu principal
+					showHomePage();
+					contenidoCentral.setAttribute("class","d-block");
+					contenidoFormularios.setAttribute("class","d-none");
+					return true;
+				};//Fin del evento update.onsuccess
+			};//Fin de objeto.onsuccess
+		};//FIn de request.onsuccess	
 	}else{
 		return false;
 	}

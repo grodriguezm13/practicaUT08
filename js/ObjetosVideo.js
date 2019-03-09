@@ -15,6 +15,7 @@ function Person(name, lastName1, born, lastName2 = null, picture = null) {
 	if (born === ""){ throw new InvalidValueException("born", born);}
 	lastName2 = typeof lastName2 !== 'undefined' ? lastName2 : "";
 	if (lastName2 === ""){ throw new EmptyValueException("lastName2");}
+	if (lastName2 === null){ lastName2 = " ";}
 	picture = typeof picture !== 'undefined' ? picture : "";
 	if (picture === ""){ throw new EmptyValueException("picture");}
 	
@@ -24,6 +25,7 @@ function Person(name, lastName1, born, lastName2 = null, picture = null) {
     var _lastName2 = lastName2;
     var _born = born;
     var _picture = picture;
+	var _completo = "";
 
     //Declaracion de getter y setters
 	Object.defineProperty(this, 'name', {
@@ -94,6 +96,20 @@ function Person(name, lastName1, born, lastName2 = null, picture = null) {
                 _picture = value;
             }//Fin del if
         }		
+	});
+	
+	Object.defineProperty(this, 'completo', {
+		get:function(){
+			return _name+" "+_lastName1+ " "+_lastName2;
+		},
+		set:function(value){
+			value = typeof completo !== 'undefined' ? value : "";
+		    if (value === ""){
+                throw new EmptyValueException("picture");
+            }else{
+                _completo = value;
+            }//Fin del if
+        }	
     });
 }//Fin de Person
 Person.prototype = {};
@@ -107,7 +123,8 @@ Person.prototype.getObject = function(){
 		lastName1: this.lastName1,
 		lastName2: this.lastName2,
 		born: this.born,
-		image: this.image
+		image: this.image,
+		completo: this.completo
 	};
 };
 

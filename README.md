@@ -10,6 +10,12 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.2
+- Cambios en el objeto Person
+- Se ha corregido un error al pinchar sobre el logo
+- Se han cambiado todos los iteradores de actores y directores por llamadas a la base de datos mediante cursores
+- Ahora al añadir, borrar o modificar un actor o director se hace sobre la base de datos
+
 Version 0.1.1
 - Se han separado las funciones de validaciones de campo en un fichero JS aparte yse ha enganchado al HTML
 - Se ha cambiado el nombre del fichero video.html a index.html

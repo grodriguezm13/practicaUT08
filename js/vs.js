@@ -24,12 +24,8 @@ function crearBase(nombre,array,clave){
 	};
 	crearDB.onupgradeneeded = function(event) {
 		var db = event.target.result;
-
 		// Se usará como clave el campo unico de cada objeto del sistema
 		var objectStore = db.createObjectStore(nombre, { keyPath: clave });
-		//Se crea un indice para poder buscar el objeto segun su clave
-		//objectStore.createIndex(clave, { unique: false });
-
 		// Se usa transaction.oncomplete para asegurarse que la creación del almacén 
 		// haya finalizado antes de añadir los datos en el.
 		objectStore.transaction.oncomplete = function(event) {
@@ -38,8 +34,8 @@ function crearBase(nombre,array,clave){
 			for (var i in array) {
 				addObjectStore.add(array[i].getObject());
 			}
-		}
-	}
+		};//Fin de objectStore.transaction.oncomplete
+	};//FIn de crearDB.onupgradeneeded
 }//FIn de baseIndexed
 
 //Funcion que inicializa todos los objetos y la relacion entre ellos
@@ -198,7 +194,7 @@ function initPopulate(){
 	}
 	//Se crea el array con los actores y se pasa a la funcion
 	var arrayAct = [persona,persona1,persona4,persona5,persona7];
-	crearBase("actores",arrayAct,"name");
+	crearBase("actores",arrayAct,"completo");
 
 	//Añadimos un director
 	try {
@@ -211,7 +207,7 @@ function initPopulate(){
 	}
 	//Se crea el array con los directores y se pasa a la funcion
 	var arrayDir = [persona2,persona3,persona6,persona8];
-	crearBase("directores",arrayDir,"name");
+	crearBase("directores",arrayDir,"completo");
 
 	//Asignamos una produccion a una categoria
 	try {
@@ -507,61 +503,64 @@ function showActors(){
 		contenido.removeChild(contenido.firstChild);
 	}
 
-	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER TODOS LOS ACTORES DEL SISTEMA
-	video = VideoSystem.getInstance();
-	var actores = video.actors;
-	var actor = actores.next();
-	while (actor.done !== true){
-		//Crea las tarjetas de las producciones en la zona central
-		var tarjeta = document.createElement("div");
-		tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
-		var borde = document.createElement("div");
-		borde.setAttribute("class","card h-100");
-		var cuerpo = document.createElement("div");
-		cuerpo.setAttribute("class","card-body");
-		var imagen = document.createElement("img");
-		imagen.setAttribute("class","card-img");
-		imagen.setAttribute("width","750");
-		imagen.setAttribute("heigh","200");
-		/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
-		//imagen.setAttribute("src","img/"+actor.value.name+".jpg");
-		imagen.setAttribute("src","img/Portada.jpg");
-		imagen.setAttribute("alt",actor.value.name);
-		var buttonTitle = document.createElement("button");
-		//id que sirve para recoger la produccion pulsada en el evento
-		buttonTitle.setAttribute("id","botonActor");
-		buttonTitle.setAttribute("type","button");
-		var nombre = actor.value.name+" "+actor.value.lastName1;
-		if (actor.value.lastName2 != null) {
-			nombre += " " + actor.value.lastName2
-		}
-		buttonTitle.setAttribute("value",nombre);
-		buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
-		buttonTitle.appendChild(document.createTextNode(nombre));	
-		var valoracion = document.createElement("div");
-		valoracion.setAttribute("class","card-footer");
-		var estrellas = document.createElement("small");
-		estrellas.setAttribute("class","text-muted");
-		/* ESTA LINEA CAMBIA LAS ESTRELLAS QUE SE MUESTRAN EN LAS TARJETAS (PROXIMA VERSION)?*/ 
-		estrellas.appendChild(document.createTextNode('Valoracion'));
-		
-		//Se crea la estructura de las tarjetas con appendChild
-		contenido.appendChild(tarjeta);
-		tarjeta.appendChild(borde);
-		borde.appendChild(cuerpo);
-		cuerpo.appendChild(imagen);
-		cuerpo.appendChild(buttonTitle);
-		cuerpo.appendChild(valoracion);
-		valoracion.appendChild(estrellas);
-	
-		//Añade eventos al hacer click sobre la imagen o sobre el nombre de la categoria
-		buttonTitle.addEventListener("click", showActor);
-		//imagen.addEventListener("click", showActor);			
-
-		//Pasa al siguiente actor
-		actor = actores.next();
-	}//Fin del while
-
+	//Abre la conexion con la base de datos actores
+	var request = indexedDB.open("actores");
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;      
+		var objectStore = db.transaction("actores").objectStore("actores");
+		//Abre un cursor para recorrer todos los objetos de la base de datos 
+		objectStore.openCursor().onsuccess = function(event) {
+			var actor = event.target.result;
+			//Si el cursor devuelve un valor pinta las tarjetas
+			if (actor) {
+				//Crea las tarjetas de las producciones en la zona central
+				var tarjeta = document.createElement("div");
+				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
+				var borde = document.createElement("div");
+				borde.setAttribute("class","card h-100");
+				var cuerpo = document.createElement("div");
+				cuerpo.setAttribute("class","card-body");
+				var imagen = document.createElement("img");
+				imagen.setAttribute("class","card-img");
+				imagen.setAttribute("width","750");
+				imagen.setAttribute("heigh","200");
+				/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
+				//imagen.setAttribute("src","img/"+actor.value.name+".jpg");
+				imagen.setAttribute("src","img/Portada.jpg");
+				imagen.setAttribute("alt",actor.value.name);
+				var buttonTitle = document.createElement("button");
+				//id que sirve para recoger la produccion pulsada en el evento
+				buttonTitle.setAttribute("id","botonActor");
+				buttonTitle.setAttribute("type","button");
+				var nombre = actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2;
+				buttonTitle.setAttribute("value",nombre);
+				buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
+				buttonTitle.appendChild(document.createTextNode(nombre));	
+				var valoracion = document.createElement("div");
+				valoracion.setAttribute("class","card-footer");
+				var estrellas = document.createElement("small");
+				estrellas.setAttribute("class","text-muted");
+				/* ESTA LINEA CAMBIA LAS ESTRELLAS QUE SE MUESTRAN EN LAS TARJETAS (PROXIMA VERSION)?*/ 
+				estrellas.appendChild(document.createTextNode('Valoracion'));
+				
+				//Se crea la estructura de las tarjetas con appendChild
+				contenido.appendChild(tarjeta);
+				tarjeta.appendChild(borde);
+				borde.appendChild(cuerpo);
+				cuerpo.appendChild(imagen);
+				cuerpo.appendChild(buttonTitle);
+				cuerpo.appendChild(valoracion);
+				valoracion.appendChild(estrellas);
+			
+				//Añade eventos al hacer click sobre el nombre del actor
+				buttonTitle.addEventListener("click", showActor);
+				//Pasa al siguiente actor
+				actor.continue();
+			}//Fin del if
+		};//Fin de objectStore.openCursor().onsuccess
+	};//Fin de request.onsuccess
 }//Fin de showActors
 
 //Muestra un listado con los directores del sistema.
@@ -581,71 +580,78 @@ function showDirectors(){
 	while (contenido.firstChild) {
 		contenido.removeChild(contenido.firstChild);
 	}
+	//Abre la conexion con la base de datos directores
+	var request = indexedDB.open("directores");
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;      
+		var objectStore = db.transaction("directores").objectStore("directores");
+		//Abre un cursor para recorrer todos los objetos de la base de datos 
+		objectStore.openCursor().onsuccess = function(event) {
+			var director = event.target.result;
+			//Si el cursor devuelve un valor pinta las tarjetas
+			if (director) {
+				//Crea las tarjetas de las producciones en la zona central
+				var tarjeta = document.createElement("div");
+				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
+				var borde = document.createElement("div");
+				borde.setAttribute("class","card h-100");
+				var cuerpo = document.createElement("div");
+				cuerpo.setAttribute("class","card-body");
+				var imagen = document.createElement("img");
+				imagen.setAttribute("class","card-img");
+				imagen.setAttribute("width","750");
+				imagen.setAttribute("heigh","200");
+				/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
+				//imagen.setAttribute("src","img/"+director.value.name+".jpg");
+				imagen.setAttribute("src","img/Portada.jpg");
+				imagen.setAttribute("alt",director.value.name);
+				var buttonTitle = document.createElement("button");
+				//id que sirve para recoger la produccion pulsada en el evento
+				buttonTitle.setAttribute("id","botonDirector");
+				buttonTitle.setAttribute("type","button");
+				var nombre = director.value.name+" "+director.value.lastName1;
+				if (director.value.lastName2 != null) {
+					nombre += " " + director.value.lastName2
+				}
+				buttonTitle.setAttribute("value",nombre);
+				buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
+				buttonTitle.appendChild(document.createTextNode(nombre));	
+				var valoracion = document.createElement("div");
+				valoracion.setAttribute("class","card-footer");
+				var estrellas = document.createElement("small");
+				estrellas.setAttribute("class","text-muted");
+				/* ESTA LINEA CAMBIA LAS ESTRELLAS QUE SE MUESTRAN EN LAS TARJETAS (PROXIMA VERSION)?*/ 
+				estrellas.appendChild(document.createTextNode('Valoracion'));
 
-	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER TODOS LOS ACTORES DEL SISTEMA
-	video = VideoSystem.getInstance();
-	var directores = video.directors;
-	var director = directores.next();
-	while (director.done !== true){
-		//Crea las tarjetas de las producciones en la zona central
-		var tarjeta = document.createElement("div");
-		tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
-		var borde = document.createElement("div");
-		borde.setAttribute("class","card h-100");
-		var cuerpo = document.createElement("div");
-		cuerpo.setAttribute("class","card-body");
-		var imagen = document.createElement("img");
-		imagen.setAttribute("class","card-img");
-		imagen.setAttribute("width","750");
-		imagen.setAttribute("heigh","200");
-		/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
-		//imagen.setAttribute("src","img/"+director.value.name+".jpg");
-		imagen.setAttribute("src","img/Portada.jpg");
-		imagen.setAttribute("alt",director.value.name);
-		var buttonTitle = document.createElement("button");
-		//id que sirve para recoger la produccion pulsada en el evento
-		buttonTitle.setAttribute("id","botonDirector");
-		buttonTitle.setAttribute("type","button");
-		var nombre = director.value.name+" "+director.value.lastName1;
-		if (director.value.lastName2 != null) {
-			nombre += " " + director.value.lastName2
-		}
-		buttonTitle.setAttribute("value",nombre);
-		buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
-		buttonTitle.appendChild(document.createTextNode(nombre));	
-		var valoracion = document.createElement("div");
-		valoracion.setAttribute("class","card-footer");
-		var estrellas = document.createElement("small");
-		estrellas.setAttribute("class","text-muted");
-		/* ESTA LINEA CAMBIA LAS ESTRELLAS QUE SE MUESTRAN EN LAS TARJETAS (PROXIMA VERSION)?*/ 
-		estrellas.appendChild(document.createTextNode('Valoracion'));
-		
-		//Se crea la estructura de las tarjetas con appendChild
-		contenido.appendChild(tarjeta);
-		tarjeta.appendChild(borde);
-		borde.appendChild(cuerpo);
-		cuerpo.appendChild(imagen);
-		cuerpo.appendChild(buttonTitle);
-		cuerpo.appendChild(valoracion);
-		valoracion.appendChild(estrellas);
+				//Se crea la estructura de las tarjetas con appendChild
+				contenido.appendChild(tarjeta);
+				tarjeta.appendChild(borde);
+				borde.appendChild(cuerpo);
+				cuerpo.appendChild(imagen);
+				cuerpo.appendChild(buttonTitle);
+				cuerpo.appendChild(valoracion);
+				valoracion.appendChild(estrellas);
 
-		//Añade eventos al hacer click sobre la imagen o sobre el nombre de la categoria
-		buttonTitle.addEventListener("click", showDirector);
-		//imagen.addEventListener("click", showDirector);			
-
-		//Pasa al siguiente actor
-		director = directores.next();
-	}//Fin del while
+				//Añade eventos al hacer click sobre la imagen o sobre el nombre del director
+				buttonTitle.addEventListener("click", showDirector);
+				//Pasa al siguiente director
+				director.continue();
+			}//Fin del if
+		};//Fin de objectStore.openCursor().onsuccess
+	};//Fin de request.onsuccess
 } //Fin de showDirectors
 
 //Dado un actor muestra toda su información relacionada, incluida sus producciones.
 function showActor(){
+	var nombre = this.value;
 	//Quita el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
-	tituloContenido.innerHTML = this.value;
+	tituloContenido.innerHTML = nombre;
 
 	//Actualiza las migas de pan
-	breadcrumb("Actor","Actores",this.value);
+	breadcrumb("Actor","Actores",nombre);
 
 	//Se selecciona la zona donde va a ir el nuevo contenido
 	var contenido = document.getElementById("tarjetasZona");
@@ -654,20 +660,20 @@ function showActor(){
 		contenido.removeChild(contenido.firstChild);
 	}
 
-	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER LA PRODUCCION SELECCIONADA
-	//Recuperamos del array de actores el objeto person que tenga el mismo nombre apellidos que el seleccionado
-	var encontrado = false;
-	var actores = video.actors;
-	var actor = actores.next();
-	while ((actor.done !== true) && (!encontrado)){
-		//Si coincide el name, lastName1 y lastName2 con el this.value es el actor seleccionado
-		var nombreCompleto = actor.value.name +" "+ actor.value.lastName1;
-		if (actor.value.lastName2 != null) {
-			nombreCompleto += " " + actor.value.lastName2
-		}
-		if (nombreCompleto == this.value){
-			//Si coincide nombre de la produccion con el valor del boton muestra la informacion
-			//Crea las tarjetas de las producciones en la zona central
+	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER EL ACTOR SELECCIONADO
+	/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+	//Abre la conexion con la base de datos actores
+	var request = indexedDB.open("actores");
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = request.result;      
+		var objectStore = db.transaction("actores", "readwrite").objectStore("actores");
+		//Obtiene el objeto de la base de datos
+		var objeto = objectStore.get(nombre);
+		objeto.onsuccess = function(event) {
+			var actor = objeto.result;
+			//Crea la tarjeta del actor en la zona central
 			var tarjeta = document.createElement("div");
 			tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
 			var borde = document.createElement("div");
@@ -681,22 +687,21 @@ function showActor(){
 			/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
 			//imagen.setAttribute("src","img/"+production.value.title+".jpg");
 			imagen.setAttribute("src","img/Portada.jpg");
-			imagen.setAttribute("alt",actor.value.name);
-			/* ESTAS LINEAS SON PARA LA NACIONALIDAD DEL ACTOR */
+			imagen.setAttribute("alt",actor.name);
+			/* ESTAS LINEAS SON PARA EL NOMBRE DEL ACTOR */
 			var nombre = document.createElement("p");
 			nombre.setAttribute("class","card-text cajaTitulo");
 			nombre.appendChild(document.createTextNode("Nombre:"));
 			var nombreDescript = document.createElement("p");
 			nombreDescript.setAttribute("class","card-text cajaDescripcion");
-			nombreDescript.appendChild(document.createTextNode(nombreCompleto));
+			nombreDescript.appendChild(document.createTextNode(actor.name+" "+actor.lastName1+" "+actor.lastName2));
 			/* ESTAS LINEAS SON PARA LA FECHA DE NACIMIENTO DEL ACTOR */
 			var nacimiento = document.createElement("p");
 			nacimiento.setAttribute("class","card-text cajaTitulo");
 			nacimiento.appendChild(document.createTextNode("Fecha de nacimiento:"));
 			var nacimientoDescript = document.createElement("p");
 			nacimientoDescript.setAttribute("class","card-text cajaDescripcion");
-			nacimientoDescript.appendChild(document.createTextNode(actor.value.born.toLocaleDateString()));			
-			
+			nacimientoDescript.appendChild(document.createTextNode(actor.born.toLocaleDateString()));			
 			//Se crea la estructura de las tarjetas con appendChild
 			contenido.appendChild(tarjeta);
 			tarjeta.appendChild(borde);
@@ -706,13 +711,12 @@ function showActor(){
 			cuerpo.appendChild(nombreDescript);
 			cuerpo.appendChild(nacimiento);
 			cuerpo.appendChild(nacimientoDescript);
-
 			var film = document.createElement("p");
 			film.setAttribute("class","card-text cajaTitulo");
 			film.appendChild(document.createTextNode("Producciones en las que ha participado:"));
 			cuerpo.appendChild(film);
 			//Muestra las producciones en las que esta asignado el actor
-			var productions = video.getProductionsActor(actor.value);
+			var productions = video.getProductionsActor(actor);
 			var production = productions.next();
 			while (production.done !== true){
 				var filmDescript = document.createElement("p");
@@ -729,23 +733,19 @@ function showActor(){
 				//Pasa a la siguiente produccion del actor
 				production = productions.next();
 			}//Fin del while iterador de producciones de un actor
-
-			encontrado = true;
-		}//Fin del if principal del while
-		//Pasamos al siguiente actor
-		actor = actores.next();
-	}//Fin del while iterador de actores
-
+		};//Fin de objeto.onsuccess
+	};//FIn de request.onsuccess	
 }//Fin de showActor
 
 //Dado un director, muestra toda su información relacionada, incluida sus producciones
 function showDirector(){
+	var nombre = this.value;
 	//Quita el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
-	tituloContenido.innerHTML = this.value;
+	tituloContenido.innerHTML = nombre;
 
 	//Actualiza las migas de pan
-	breadcrumb("Director","Directores",this.value);
+	breadcrumb("Director","Directores",nombre);
 
 	//Se selecciona la zona donde va a ir el nuevo contenido
 	var contenido = document.getElementById("tarjetasZona");
@@ -754,20 +754,20 @@ function showDirector(){
 		contenido.removeChild(contenido.firstChild);
 	}
 
-	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER LA PRODUCCION SELECCIONADA
-	//Recuperamos del array de actores el objeto person que tenga el mismo nombre apellidos que el seleccionado
-	var encontrado = false;
-	var directores = video.directors;
-	var director = directores.next();
-	while ((director.done !== true) && (!encontrado)){
-		//Si coincide el name, lastName1 y lastName2 con el this.value es el actor seleccionado
-		var nombreCompleto = director.value.name +" "+ director.value.lastName1;
-		if (director.value.lastName2 != null) {
-			nombreCompleto += " " + director.value.lastName2
-		}
-		if (nombreCompleto == this.value){
-			//Si coincide nombre de la produccion con el valor del boton muestra la informacion
-			//Crea las tarjetas de las producciones en la zona central
+	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER EL DIRECTOR SELECCIONADO
+	/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+	//Abre la conexion con la base de datos directores
+	var request = indexedDB.open("directores");
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = request.result;      
+		var objectStore = db.transaction("directores", "readwrite").objectStore("directores");
+		//Obtiene el objeto de la base de datos
+		var objeto = objectStore.get(nombre);
+		objeto.onsuccess = function(event) {
+			var director = objeto.result;
+			//Crea la tarjeta del director en la zona central
 			var tarjeta = document.createElement("div");
 			tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
 			var borde = document.createElement("div");
@@ -781,21 +781,21 @@ function showDirector(){
 			/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
 			//imagen.setAttribute("src","img/"+director.value.title+".jpg");
 			imagen.setAttribute("src","img/Portada.jpg");
-			imagen.setAttribute("alt",director.value.name);
+			imagen.setAttribute("alt",director.name);
 			/* ESTAS LINEAS SON PARA LA NACIONALIDAD DEL ACTOR */
 			var nombre = document.createElement("p");
 			nombre.setAttribute("class","card-text cajaTitulo");
 			nombre.appendChild(document.createTextNode("Nombre:"));
 			var nombreDescript = document.createElement("p");
 			nombreDescript.setAttribute("class","card-text cajaDescripcion");
-			nombreDescript.appendChild(document.createTextNode(nombreCompleto));
+			nombreDescript.appendChild(document.createTextNode(director.name+" "+director.lastName1+" "+director.lastName2));
 			/* ESTAS LINEAS SON PARA LA FECHA DE NACIMIENTO DEL DIRECTOR */
 			var nacimiento = document.createElement("p");
 			nacimiento.setAttribute("class","card-text cajaTitulo");
 			nacimiento.appendChild(document.createTextNode("Fecha de nacimiento:"));
 			var nacimientoDescript = document.createElement("p");
 			nacimientoDescript.setAttribute("class","card-text cajaDescripcion");
-			nacimientoDescript.appendChild(document.createTextNode(director.value.born.toLocaleDateString()));			
+			nacimientoDescript.appendChild(document.createTextNode(director.born.toLocaleDateString()));			
 			
 			//Se crea la estructura de las tarjetas con appendChild
 			contenido.appendChild(tarjeta);
@@ -811,8 +811,8 @@ function showDirector(){
 			film.setAttribute("class","card-text cajaTitulo");
 			film.appendChild(document.createTextNode("Producciones que ha dirigido:"));
 			cuerpo.appendChild(film);
-			//Muestra las producciones en las que esta asignado el actor
-			var productions = video.getProductionsDirector(director.value);
+			//Muestra las producciones en las que esta asignado el director
+			var productions = video.getProductionsDirector(director);
 			var production = productions.next();
 			while (production.done !== true){
 				var filmDescript = document.createElement("p");
@@ -825,15 +825,11 @@ function showDirector(){
 				proBtn.addEventListener("click", showProduction); 
 				filmDescript.appendChild(proBtn);
 				cuerpo.appendChild(filmDescript);
-				//Pasa a la siguiente produccion del actor
+				//Pasa a la siguiente produccion del director
 				production = productions.next();
-			}//Fin del while iterador de producciones de un actor
-
-			encontrado = true;
-		}//Fin del if principal del while
-		//Pasamos al siguiente director
-		director = directores.next();
-	}//Fin del while iterador de directores
+			}//Fin del while iterador de producciones de un director
+		};//Fin de objeto.onsuccess
+	};//FIn de request.onsuccess	
 }//Fin de showDirector
 
 //Dado una categoría, director o actor, muestra el listado de sus producciones.
