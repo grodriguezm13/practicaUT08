@@ -9,34 +9,54 @@ try {
 var arrayRecursos = new Array();
 //Array para guardar las temporadas del sistema
 var arraySeason = new Array();
-
-//Esta variable controla las version de las bases de datos
+//Estas variables controlan las bases de datos
 var version = 1;
+nombreDB = "GUIROMO_CHANNEL";
 //Funcion que crea las bases de datos del sistema
-function crearBase(nombre,array,clave){
+function crearTablas(){
 	if(!window.indexedDB){
 		window.alert("El navegador no soporta la base de datos IndexedDB. El contenido que añadas, elimines o modifiques no es permanente");
 	}
+	//nombre de la base de datos y versión
+	var dataBase = indexedDB.open(nombreDB, version);
 
-	var crearDB = window.indexedDB.open(nombre, version);
-	crearDB.onerror = function(event){
-		window.alert("No se ha podido crear la base de datos "+nombre+"");
-	};
-	crearDB.onupgradeneeded = function(event) {
-		var db = event.target.result;
-		// Se usará como clave el campo unico de cada objeto del sistema
-		var objectStore = db.createObjectStore(nombre, { keyPath: clave });
+	dataBase.onupgradeneeded = function (e) {  
+		var active = dataBase.result;
+		//Creacion de la tabla Categorias
+		active.createObjectStore("categorias", { keyPath: 'name' });
+			
+		//Creacion de la tabla Producciones
+		active.createObjectStore("producciones", { keyPath: 'title'	});
+		
+		//Creacion de la tabla actores
+		active.createObjectStore("actores", { keyPath: 'completo' });
+		
+		//Creacion de la tabla directores
+		active.createObjectStore("directores", { keyPath: 'completo' });
+		
+	};//FIn del dataBase.onupgradeneeded
+}//FIn de baseIndexed
+
+//añade los valores iniciales a la base de datos
+function addValues(tabla,array) {
+	//Abre la conexion con la base de datos 
+	var request = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;         
+		var objectStore = db.transaction([tabla],"readwrite").objectStore(tabla);
 		// Se usa transaction.oncomplete para asegurarse que la creación del almacén 
 		// haya finalizado antes de añadir los datos en el.
 		objectStore.transaction.oncomplete = function(event) {
 			// Guarda los datos en el almacén recién creado.
-			var addObjectStore = db.transaction(nombre, "readwrite").objectStore(nombre);
+			var addObjectStore = db.transaction([tabla],"readwrite").objectStore(tabla);
 			for (var i in array) {
 				addObjectStore.add(array[i].getObject());
 			}
-		};//Fin de objectStore.transaction.oncomplete
-	};//FIn de crearDB.onupgradeneeded
-}//FIn de baseIndexed
+		};//Fin de tablaCategorias.transaction.oncomplete
+	};//Fin de request.onsuccess
+}//Fin de addvalues
 
 //Funcion que inicializa todos los objetos y la relacion entre ellos
 function initPopulate(){	
@@ -151,7 +171,7 @@ function initPopulate(){
 	}
 	//Se crea el array con las categorias y se pasa a la funcion
 	var arrayCat = [category,category1,category2,category3,category4,category5,category6,category7,category8,category9];
-	crearBase("categorias",arrayCat,"name");
+	addValues("categorias",arrayCat);
 
 	//Añadimos los usuarios
 	try {
@@ -180,7 +200,7 @@ function initPopulate(){
 	}
 	//Se crea el array con las producciones y se pasa a la funcion
 	var arrayPro = [movie,movie1,movie2,movie3,movie4,movie5,movie6,serie,serie1,serie2,serie3];
-	crearBase("producciones",arrayPro,"title");
+	addValues("producciones",arrayPro);
 
 	//Añadimos los actores
 	try {
@@ -194,7 +214,7 @@ function initPopulate(){
 	}
 	//Se crea el array con los actores y se pasa a la funcion
 	var arrayAct = [persona,persona1,persona4,persona5,persona7];
-	crearBase("actores",arrayAct,"completo");
+	addValues("actores",arrayAct);
 
 	//Añadimos un director
 	try {
@@ -207,7 +227,7 @@ function initPopulate(){
 	}
 	//Se crea el array con los directores y se pasa a la funcion
 	var arrayDir = [persona2,persona3,persona6,persona8];
-	crearBase("directores",arrayDir,"completo");
+	addValues("directores",arrayDir);
 
 	//Asignamos una produccion a una categoria
 	try {
@@ -268,7 +288,6 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
-
 }//Fin de initPopulate
 
 //Funcion que actualiza las migas de pan
@@ -375,14 +394,13 @@ function showHomePage(){
 	while (tarjetas.firstChild) {
 		tarjetas.removeChild(tarjetas.firstChild);
 	}
-
 	//Abre la conexion con la base de datos categorias
-	var request = indexedDB.open("categorias");
+	var request = indexedDB.open(nombreDB);
 	//Si ha salido bien
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
-		var db = event.target.result;      
-		var objectStore = db.transaction("categorias").objectStore("categorias");
+		var db = event.target.result;         
+		var objectStore = db.transaction(["categorias"],"readonly").objectStore("categorias");
 		//Abre un cursor para recorrer todos los objetos de la base de datos 
 		objectStore.openCursor().onsuccess = function(event) {
 			var cursor = event.target.result;
@@ -431,8 +449,7 @@ function showHomePage(){
 			
 				//Añade eventos al hacer click sobre la imagen o sobre el nombre de la categoria
 				buttonTitle.addEventListener("click", showProductions);
-
-				//Pasa a la siguiente categoria
+					//Pasa a la siguiente categoria
 				cursor.continue();
 			}//Fin del if
 		};//Fin de objectStore.openCursor().onsuccess
@@ -448,12 +465,12 @@ function categoriesMenuPopulate(){
 		menu.removeChild(menu.firstChild);
 	}
 	//Abre la conexion con la base de datos categorias
-	var request = indexedDB.open("categorias", version);
+	var request = indexedDB.open(nombreDB);
 	//Si ha salido bien
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
-		var db = event.target.result;      
-		var objectStore = db.transaction("categorias").objectStore("categorias");
+		var db = event.target.result;         
+		var objectStore = db.transaction(["categorias"],"readonly").objectStore("categorias");
 		//Abre un cursor para recorrer todos los objetos de la base de datos 
 		objectStore.openCursor().onsuccess = function(event) {
 			var cursor = event.target.result;
@@ -504,12 +521,12 @@ function showActors(){
 	}
 
 	//Abre la conexion con la base de datos actores
-	var request = indexedDB.open("actores");
+	var request = indexedDB.open(nombreDB);
 	//Si ha salido bien
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
-		var db = event.target.result;      
-		var objectStore = db.transaction("actores").objectStore("actores");
+		var db = event.target.result;         
+		var objectStore = db.transaction(["actores"],"readonly").objectStore("actores");
 		//Abre un cursor para recorrer todos los objetos de la base de datos 
 		objectStore.openCursor().onsuccess = function(event) {
 			var actor = event.target.result;
@@ -581,12 +598,12 @@ function showDirectors(){
 		contenido.removeChild(contenido.firstChild);
 	}
 	//Abre la conexion con la base de datos directores
-	var request = indexedDB.open("directores");
+	var request = indexedDB.open(nombreDB);
 	//Si ha salido bien
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
-		var db = event.target.result;      
-		var objectStore = db.transaction("directores").objectStore("directores");
+		var db = event.target.result;         
+		var objectStore = db.transaction(["directores"],"readonly").objectStore("directores");
 		//Abre un cursor para recorrer todos los objetos de la base de datos 
 		objectStore.openCursor().onsuccess = function(event) {
 			var director = event.target.result;
@@ -663,12 +680,12 @@ function showActor(){
 	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER EL ACTOR SELECCIONADO
 	/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
 	//Abre la conexion con la base de datos actores
-	var request = indexedDB.open("actores");
+	var request = indexedDB.open(nombreDB);
 	//Si ha salido bien
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
-		var db = request.result;      
-		var objectStore = db.transaction("actores", "readwrite").objectStore("actores");
+		var db = event.target.result;         
+		var objectStore = db.transaction(["actores"],"readonly").objectStore("actores");
 		//Obtiene el objeto de la base de datos
 		var objeto = objectStore.get(nombre);
 		objeto.onsuccess = function(event) {
@@ -757,12 +774,12 @@ function showDirector(){
 	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER EL DIRECTOR SELECCIONADO
 	/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
 	//Abre la conexion con la base de datos directores
-	var request = indexedDB.open("directores");
+	var request = indexedDB.open(nombreDB);
 	//Si ha salido bien
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
-		var db = request.result;      
-		var objectStore = db.transaction("directores", "readwrite").objectStore("directores");
+		var db = event.target.result;         
+		var objectStore = db.transaction(["directores"],"readonly").objectStore("directores");
 		//Obtiene el objeto de la base de datos
 		var objeto = objectStore.get(nombre);
 		objeto.onsuccess = function(event) {
@@ -834,14 +851,15 @@ function showDirector(){
 
 //Dado una categoría, director o actor, muestra el listado de sus producciones.
 function showProductions(){
+	var nomCat = this.value;
 	//Cambia el titulo de la pagina principal
 	var tituloContenido = document.getElementById("tituloZona");
 	tituloContenido.style.display = "block";
 	//El valor this.value lo recoge del valor del boton que hayamos pulsado
-	tituloContenido.innerHTML = this.value;
+	tituloContenido.innerHTML = nomCat;
 
 	//Actualiza las migas de pan
-	breadcrumb("Producciones",null,this.value);
+	breadcrumb("Producciones",null,nomCat);
 
 	//Se selecciona la zona donde va a ir el nuevo contenido
 	var contenido = document.getElementById("tarjetasZona");
@@ -852,18 +870,21 @@ function showProductions(){
 	}
 
 	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER LAS PRODUCCIONES DE UNA CATEGORIA
-	var encontrado = false;
-	video = VideoSystem.getInstance();
-	var categorias = video.categories;
-	var categoria = categorias.next();
-	while ((categoria.done !== true) && (!encontrado)){
-		if (categoria.value.name == this.value) {
-			//Si coincide nombre de la categoria con el valor del boton
+	//Abre la conexion con la base de datos categorias
+	var request = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;         
+		var objectStore = db.transaction(["categorias"],"readonly").objectStore("categorias");
+		var objeto = objectStore.get(nomCat);
+		//Abre un cursor para recorrer todos los objetos de la base de datos 
+		objeto.onsuccess = function(event) {
+			var categoria = event.target.result;
 			//Comienza el iterador de las producciones de esa categoria
-			var productions = video.getProductionsCategory(categoria.value);
+			var productions = video.getProductionsCategory(categoria);
 			var production = productions.next();
 			while (production.done !== true){
-
 				//Crea las tarjetas de las producciones en la zona central
 				var tarjeta = document.createElement("div");
 				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
@@ -918,27 +939,21 @@ function showProductions(){
 				//Añade eventos al hacer click sobre la imagen o sobre el nombre de la categoria
 				buttonTitle.addEventListener("click", showProduction);
 				//imagen.addEventListener("click", showProduction);	
-
 				production = productions.next();
 			}//fin del while iterador
-			//Variable para salir del bucle principal si encuentra la categoria
-			encontrado = true;
-		}//Fin del if que compara el nombre de la categoria con el valor del boton
-		
-        //Pasa a la siguiente categoria
-		categoria = categorias.next();
-	}//FIn del while iterador
-	
+		};//Fin de objeto.onsuccess
+	};//Fin de request.onsuccess
 }//Fin de showProductions
 
 //Muestra la información de una producción, incluida su director y sus actores participantes.
 function showProduction(){
+	var titulo = this.value;
 	//Oculta el  el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
 	tituloContenido.style.display = "none";
 	
 	//Se actualizan las migas de pan
-	breadcrumb("Produccion",tituloContenido.textContent, this.value);
+	breadcrumb("Produccion",tituloContenido.textContent, titulo);
 
 	//Se selecciona la zona donde va a ir el nuevo contenido
 	var contenido = document.getElementById("tarjetasZona");
@@ -948,12 +963,18 @@ function showProduction(){
 	}
 
 	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER LA PRODUCCION SELECCIONADA
-	var encontrado = false;
-	var producciones = video.productions;
-	var produccion = producciones.next();
-	while ((produccion.done !== true) && (!encontrado)){
-		if (produccion.value.title == this.value) {
-			//Si coincide nombre de la produccion con el valor del boton muestra la informacion
+	/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
+	//Abre la conexion con la base de datos producciones
+	var request = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;         
+		var objectStore = db.transaction(["producciones"],"readonly").objectStore("producciones");
+		//Obtiene el objeto de la base de datos
+		var objeto = objectStore.get(titulo);
+		objeto.onsuccess = function(event) {
+			var produccion = objeto.result;
 			//Crea las tarjetas de las producciones en la zona central
 			var tarjeta = document.createElement("div");
 			tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
@@ -964,8 +985,8 @@ function showProduction(){
 			var titulo = document.createElement("h2");
 			titulo.setAttribute("class","card-title");
 			titulo.setAttribute("id","titulo");
-			titulo.setAttribute("value",produccion.value.title);
-			titulo.appendChild(document.createTextNode(produccion.value.title));
+			titulo.setAttribute("value",produccion.title);
+			titulo.appendChild(document.createTextNode(produccion.title));
 			var imagen = document.createElement("img");
 			imagen.setAttribute("class","card-img");
 			imagen.setAttribute("width","750");
@@ -980,21 +1001,21 @@ function showProduction(){
 			nationality.appendChild(document.createTextNode("Nacionalidad:"));
 			var nationalityDescript = document.createElement("p");
 			nationalityDescript.setAttribute("class","card-text cajaDescripcion");
-			nationalityDescript.appendChild(document.createTextNode(produccion.value.nationality));
+			nationalityDescript.appendChild(document.createTextNode(produccion.nationality));
 			/* ESTAS LINEAS SON PARA LA FECHA DE LA PRODUCCION */
 			var publication = document.createElement("p");
 			publication.setAttribute("class","card-text cajaTitulo");
 			publication.appendChild(document.createTextNode("Fecha de publicacion:"));
 			var publicationDescript = document.createElement("p");
 			publicationDescript.setAttribute("class","card-text cajaDescripcion");
-			publicationDescript.appendChild(document.createTextNode(produccion.value.publication.toLocaleDateString()));
+			publicationDescript.appendChild(document.createTextNode(produccion.publication.toLocaleDateString()));
 			/* ESTAS LINEAS SON PARA LA SIPNOSIS DE LA PRODUCCION */
 			var synopsis = document.createElement("p");
 			synopsis.setAttribute("class","card-text cajaTitulo");
 			synopsis.appendChild(document.createTextNode("Sipnosis:"));
 			var synopsisDescript = document.createElement("p");
 			synopsisDescript.setAttribute("class","card-text cajaDescripcion");
-			synopsisDescript.appendChild(document.createTextNode(produccion.value.synopsis));
+			synopsisDescript.appendChild(document.createTextNode(produccion.synopsis));
 
 			//Se crea la estructura de las tarjetas con appendChild
 			contenido.appendChild(tarjeta);
@@ -1021,7 +1042,7 @@ function showProduction(){
 				while ((production.done !== true) && (!encontrado)){
 					//Si el titulo de la production del iterador es igual al titulo de la produccion en la que estamos
 					//muestra en esta produccion que es el director
-					if(production.value.title == produccion.value.title){
+					if(production.value.title == produccion.title){
 						var dir = document.createElement("p");
 						dir.setAttribute("class","card-text cajaTitulo");
 						dir.appendChild(document.createTextNode("Dirigida por:"));
@@ -1050,7 +1071,7 @@ function showProduction(){
 			}//Fin del while iterador de directores
 			
 			//Para mostrar los actores de la produccion necesitamos otro iterador
-			var elenco = video.getCast(produccion.value);
+			var elenco = video.getCast(produccion);
 			var actor = elenco.next();
 			var act = document.createElement("p");
 			act.setAttribute("class","card-text cajaTitulo");
@@ -1082,18 +1103,11 @@ function showProduction(){
 			resourceBtn.appendChild(document.createTextNode("Mostrar recursos")); 
 			resourceBtn.addEventListener("click", abrirVentana);
 			cuerpo.appendChild(resourceBtn);
-			
-			encontrado = true;
-		}//Fin del if
-		//Pasa a la siguiente produccion
-		produccion = producciones.next();
-		
-	}//Fin del while iterador
-	
+		};//Fin de objeto.onsuccess
+	};//FIn de request.onsuccess
 }//Fin de showProduction
 
 /* FUNCIONES AÑADIDAS EN LA PRACTICA 6 */
-
 var arrayVentanas = new Array();
 //Abre una nueva ventana
 function abrirVentana(){
@@ -1252,7 +1266,9 @@ function showResource(){
 
 //Funcion que llama a todas las funciones que necesita el sistema
 function init(){
-	//Instancia los objetos y los mete en la base de datos
+	//Crea la base de datos y las tablas
+	crearTablas();
+	//Instancia los objetos y los mete en la tabla
 	initPopulate();
 	//Muestra el contenido de la pagina
 	showHomePage();

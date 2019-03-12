@@ -739,11 +739,10 @@ var VideoSystem = (function () {
 
 
 
-
 		}//Fin de la funcion constructora de VideoSystem
 		VideoSystem.prototype = {}; 
 		VideoSystem.prototype.constructor = VideoSystem;
-
+	
 		//Devolvemos el objeto para que sea una instancia única.
 		var video = new VideoSystem();
 		return video;

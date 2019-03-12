@@ -10,6 +10,11 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.2.1
+- Se ha corregido un error al intentar eliminar categorias, actores y directores creados si se ha recargado la pagina
+- Ahora al realizar operaciones si son un exito muestra un modal para informar al usuario
+- Se ha corregido un fallo con las bases de datos y las tablas
+
 Version 0.2
 - Cambios en el objeto Person
 - Se ha corregido un error al pinchar sobre el logo

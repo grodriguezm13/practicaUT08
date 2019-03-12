@@ -59,7 +59,7 @@ button.list-group-item, button.nav-link{
   display: block;
 }
 
-#menuEdicion, #divMovie, #divSerie, #divInputDir, #divActor{
+#menuEdicion, #divMovie, #divSerie, #divInputDir, #divActor, #exito{
   display: none;
 }
 
@@ -71,6 +71,7 @@ nav.migas {
   height: 55px;
   background-color: #e9ecef;
 }
+
 
 .zoom:hover {
   transform: scale(1.1); 
