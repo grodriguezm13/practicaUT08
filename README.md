@@ -10,6 +10,9 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.2.2
+- Se ha añadido un cronometro a la interfaz junto con su funcionalidad
+
 Version 0.2.1
 - Se ha corregido un error al intentar eliminar categorias, actores y directores creados si se ha recargado la pagina
 - Ahora al realizar operaciones si son un exito muestra un modal para informar al usuario

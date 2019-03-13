@@ -76,3 +76,19 @@ nav.migas {
 .zoom:hover {
   transform: scale(1.1); 
 }
+
+/* CSS PARA EL CRONOMETRO DE LA PRACTICA 8 */
+.cronometro{
+  width:255px;
+  height:100px;
+  text-align:center;
+} 
+
+.boton{display:inline-block;width:32px;height:32px;position:relative;}
+
+.hms{
+  height:20px;
+  padding:5px 0;
+  font-size:25px;
+  color:#000; 
+}
