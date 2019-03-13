@@ -10,8 +10,15 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+FALTA problema con las modificaciones, eliminar director de produccion
+
+Version 0.2.4
+- Ahora puedes pinchar sobre las tarjetas y no solo sobre los botones de las tarjetas
+- Cambios en la interfaz
+- Solucionado el error que hacia que desapareciese el titulo al volver al inicio desde una produccion
+
 Version 0.2.3
-- Cambios en el cronometro
+- Cambios en el cronometro 
 - Mejoras a la hora de gestionar los duplicados en la base de datos
 
 Version 0.2.2

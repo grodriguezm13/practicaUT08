@@ -168,8 +168,6 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
-	//Crea la base de datos y las tablas
-	crearTablas();
 	//Se crea el array con las categorias y se pasa a la funcion
 	var arrayCat = [category,category1,category2,category3,category4,category5,category6,category7,category8,category9];
 	addValues("categorias",arrayCat);
@@ -378,6 +376,7 @@ function showHomePage(){
 	//Selecciona el titulo central y le cambia el nombre
 	var tituloContenido = document.getElementById("tituloZona");
 	tituloContenido.innerHTML = "Categorias del sistema";
+	tituloContenido.style.display = "block";
 
 	//Selecciona la zona debajo del menu horizontal de edicion y la muestra
 	var contenidoCentral = document.getElementById("contenidoCentral");
@@ -410,7 +409,9 @@ function showHomePage(){
 				var categoria = new Category (cursor.value.name, cursor.value.description);
 				//Crea las card de la zona central
 				var tarjeta = document.createElement("div");
-				tarjeta.setAttribute("class","col-lg-4 col-md-6 mb-4 zoom");	
+				tarjeta.setAttribute("class","col-lg-4 col-md-6 mb-4 zoom");
+				tarjeta.setAttribute("id",categoria.name);	
+				tarjeta.addEventListener("click", showProductions);
 				var borde = document.createElement("div");
 				borde.setAttribute("class","card h-100");
 				var cuerpo = document.createElement("div");
@@ -448,9 +449,7 @@ function showHomePage(){
 				cuerpo.appendChild(valoracion);
 				valoracion.appendChild(estrellas);
 			
-				//Añade eventos al hacer click sobre la imagen o sobre el nombre de la categoria
-				buttonTitle.addEventListener("click", showProductions);
-					//Pasa a la siguiente categoria
+				//Pasa a la siguiente categoria
 				cursor.continue();
 			}//Fin del if
 		};//Fin de objectStore.openCursor().onsuccess
@@ -482,7 +481,7 @@ function categoriesMenuPopulate(){
 				var li = document.createElement("li");
 				li.setAttribute("class","nav-item");
 				var botonEnlace = document.createElement("button");
-				botonEnlace.setAttribute("class","nav-link btn btn-outline-primary btn-lg btn-block");
+				botonEnlace.setAttribute("class","nav-link btn btn-outline-secondary btn-lg btn-block");
 				botonEnlace.setAttribute("value",categoria.name);
 				botonEnlace.appendChild(document.createTextNode(categoria.name));
 				botonEnlace.addEventListener("click", showProductions);
@@ -536,6 +535,9 @@ function showActors(){
 				//Crea las tarjetas de las producciones en la zona central
 				var tarjeta = document.createElement("div");
 				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
+				var nombre = actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2;
+				tarjeta.setAttribute("id",nombre);	
+				tarjeta.addEventListener("click", showActor);
 				var borde = document.createElement("div");
 				borde.setAttribute("class","card h-100");
 				var cuerpo = document.createElement("div");
@@ -552,7 +554,6 @@ function showActors(){
 				//id que sirve para recoger la produccion pulsada en el evento
 				buttonTitle.setAttribute("id","botonActor");
 				buttonTitle.setAttribute("type","button");
-				var nombre = actor.value.name+" "+actor.value.lastName1+" "+actor.value.lastName2;
 				buttonTitle.setAttribute("value",nombre);
 				buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
 				buttonTitle.appendChild(document.createTextNode(nombre));	
@@ -572,8 +573,6 @@ function showActors(){
 				cuerpo.appendChild(valoracion);
 				valoracion.appendChild(estrellas);
 			
-				//Añade eventos al hacer click sobre el nombre del actor
-				buttonTitle.addEventListener("click", showActor);
 				//Pasa al siguiente actor
 				actor.continue();
 			}//Fin del if
@@ -587,7 +586,7 @@ function showDirectors(){
 	var tituloContenido = document.getElementById("tituloZona");
 	//El valor this.value lo recoge del valor del boton que hayamos pulsado
 	tituloContenido.innerHTML = "Directores del sistema";
-
+	tituloContenido.style.display = "block";
 	//Actualiza las migas de pan
 	breadcrumb("Directores",null,"Directores");
 
@@ -613,6 +612,12 @@ function showDirectors(){
 				//Crea las tarjetas de las producciones en la zona central
 				var tarjeta = document.createElement("div");
 				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
+				var nombre = director.value.name+" "+director.value.lastName1;
+				if (director.value.lastName2 != null) {
+					nombre += " " + director.value.lastName2
+				}
+				tarjeta.setAttribute("id",nombre);	
+				tarjeta.addEventListener("click", showDirector);
 				var borde = document.createElement("div");
 				borde.setAttribute("class","card h-100");
 				var cuerpo = document.createElement("div");
@@ -629,10 +634,6 @@ function showDirectors(){
 				//id que sirve para recoger la produccion pulsada en el evento
 				buttonTitle.setAttribute("id","botonDirector");
 				buttonTitle.setAttribute("type","button");
-				var nombre = director.value.name+" "+director.value.lastName1;
-				if (director.value.lastName2 != null) {
-					nombre += " " + director.value.lastName2
-				}
 				buttonTitle.setAttribute("value",nombre);
 				buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
 				buttonTitle.appendChild(document.createTextNode(nombre));	
@@ -652,8 +653,6 @@ function showDirectors(){
 				cuerpo.appendChild(valoracion);
 				valoracion.appendChild(estrellas);
 
-				//Añade eventos al hacer click sobre la imagen o sobre el nombre del director
-				buttonTitle.addEventListener("click", showDirector);
 				//Pasa al siguiente director
 				director.continue();
 			}//Fin del if
@@ -663,11 +662,12 @@ function showDirectors(){
 
 //Dado un actor muestra toda su información relacionada, incluida sus producciones.
 function showActor(){
-	var nombre = this.value;
+	//Segun donde hayas pinchado, si en la tarjeta o en el boton recoge el valor
+	var nombre = this.value || this.id;
 	//Quita el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
 	tituloContenido.innerHTML = nombre;
-
+	tituloContenido.style.display = "block";
 	//Actualiza las migas de pan
 	breadcrumb("Actor","Actores",nombre);
 
@@ -757,11 +757,12 @@ function showActor(){
 
 //Dado un director, muestra toda su información relacionada, incluida sus producciones
 function showDirector(){
-	var nombre = this.value;
+	//Segun donde hayas pinchado, si en la tarjeta o en el boton recoge el valor
+	var nombre = this.value || this.id;
 	//Quita el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
 	tituloContenido.innerHTML = nombre;
-
+	tituloContenido.style.display = "block";
 	//Actualiza las migas de pan
 	breadcrumb("Director","Directores",nombre);
 
@@ -852,7 +853,8 @@ function showDirector(){
 
 //Dado una categoría, director o actor, muestra el listado de sus producciones.
 function showProductions(){
-	var nomCat = this.value;
+	//Segun donde hayas pinchado, si en la tarjeta o en el boton recoge el valor
+	var nomCat = this.value || this.id;
 	//Cambia el titulo de la pagina principal
 	var tituloContenido = document.getElementById("tituloZona");
 	tituloContenido.style.display = "block";
@@ -889,6 +891,8 @@ function showProductions(){
 				//Crea las tarjetas de las producciones en la zona central
 				var tarjeta = document.createElement("div");
 				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
+				tarjeta.setAttribute("id",production.value.title);	
+				tarjeta.addEventListener("click", showProduction);
 				var borde = document.createElement("div");
 				borde.setAttribute("class","card h-100");
 				var cuerpo = document.createElement("div");
@@ -937,9 +941,7 @@ function showProductions(){
 				cuerpo.appendChild(valoracion);
 				valoracion.appendChild(estrellas);
 			
-				//Añade eventos al hacer click sobre la imagen o sobre el nombre de la categoria
-				buttonTitle.addEventListener("click", showProduction);
-				//imagen.addEventListener("click", showProduction);	
+				//Pasa a la siguiente produccion
 				production = productions.next();
 			}//fin del while iterador
 		};//Fin de objeto.onsuccess
@@ -948,7 +950,7 @@ function showProductions(){
 
 //Muestra la información de una producción, incluida su director y sus actores participantes.
 function showProduction(){
-	var titulo = this.value;
+	var titulo = this.value || this.id;
 	//Oculta el  el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
 	tituloContenido.style.display = "none";
@@ -978,12 +980,12 @@ function showProduction(){
 			var produccion = objeto.result;
 			//Crea las tarjetas de las producciones en la zona central
 			var tarjeta = document.createElement("div");
-			tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
+			tarjeta.setAttribute("class","col-lg-12 col-md-12 my-4");
 			var borde = document.createElement("div");
 			borde.setAttribute("class","card h-100");
 			var cuerpo = document.createElement("div");
 			cuerpo.setAttribute("class","card-body");
-			var titulo = document.createElement("h2");
+			var titulo = document.createElement("h1");
 			titulo.setAttribute("class","card-title");
 			titulo.setAttribute("id","titulo");
 			titulo.setAttribute("value",produccion.title);
@@ -1267,6 +1269,8 @@ function showResource(){
 
 //Funcion que llama a todas las funciones que necesita el sistema
 function init(){
+	//Crea la base de datos y las tablas
+	crearTablas();
 	//Instancia los objetos y los mete en la tabla
 	initPopulate();
 	//Muestra el contenido de la pagina

@@ -22,6 +22,7 @@ span.card-text {
 
 p.cajaTitulo{
   color: darkblue;
+  font-weight: bold;
 }
 
 p.cajaDescripcion{
@@ -50,7 +51,7 @@ button.list-group-item, button.nav-link{
   padding: 12px 16px;
   text-decoration: none;
   display: block;
-  text-align: left;
+  text-align: center;
 }
 
 .dropdown-content a:hover {background-color: #f1f1f1}
@@ -72,11 +73,20 @@ nav.migas {
   background-color: #e9ecef;
 }
 
+.zoom:hover { transform: scale(1.1); }
 
-.zoom:hover {
-  transform: scale(1.1); 
+.card, .botonMenu{
+  cursor: pointer;
+  border: #007bff 1px solid;
 }
 
+form label{ font-weight: bold; }
+
+form legend{ font-size: 250%; }
+
+#menuEdicion{
+  border: black 2px solid;
+}
 /* CSS PARA EL CRONOMETRO DE LA PRACTICA 8 */
 .cronometro{
   width:255px;

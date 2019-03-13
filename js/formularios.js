@@ -695,11 +695,23 @@ function validarModificacionCategoria(objetoCategoria){
 				var nuevo = objeto.result;
 				nuevo.name = nombre;
 				nuevo.description = descript;
+				
 				//Se manda la actualizacion a la base de datos
 				var update = objectStore.put(nuevo);
 				update.onsuccess = function(){
-					//Borra el antiguo para poner el nuevo
-					objectStore.delete(objetoCategoria.name);
+					//Variable para guardar el objeto categoria
+					var encontrado = false;
+					var categorias = video.categories;
+					var categoria = categorias.next();
+					while ((categoria.done !== true) && (!encontrado)){
+						if (categoria.value.name == objetoCategoria.name) {
+							//Se cambian los parametros del objeto que hay en el array del videosystem
+							categoria.value.name = nombre;
+							categoria.value.description = descript;
+							encontrado = true;
+						}
+						categoria = categorias.next();
+					}//Fin del while
 					//Se abre el modal que avisa al usuario
 					$('#exitoModal').modal('show');
 					//Si todo ha salido bien vuelve al menu principal
@@ -1507,6 +1519,13 @@ function validarModificacionPerson(rol,objetoPerson){
 				update.onsuccess = function(){
 					//Borra el antiguo para poner el nuevo
 					objectStore.delete(objetoPerson.completo);
+					if (rol == "Actor") {
+						//Se añade al video systeam el nuevo
+						video.addActor(objetoPerson);
+					}else{
+						video.addDirector(objetoPerson);
+					}
+					
 					//Se abre el modal que avisa al usuario
 					$('#exitoModal').modal('show');
 					//Si todo ha salido bien vuelve al menu principal
@@ -2618,24 +2637,26 @@ function deleteProduction(){
 					actor = elenco.next();
 				}//Fin del while
 				//Se elimina por el key path
-				deleteObjectStore.delete(objetoProduccion.title);
-				try {
-					//Elimina el objeto que se ha encontrado del sistema
-					video.removeProduction(objetoProduccion);
-				} catch (error) {
-					//NO HACE NADA
-				}
+				var operacion = deleteObjectStore.delete(objetoProduccion.title);
+				operacion.onsuccess = function (event) {
+					try {
+						//Elimina el objeto que se ha encontrado del sistema
+						video.removeProduction(objetoProduccion);
+					} catch (error) {
+						//NO HACE NADA
+					}
+					//Se abre el modal que avisa al usuario
+					$('#exitoModal').modal('show');
+					//Selecciona la zona debajo del menu horizontal de edicion y la muestra
+					var contenidoCentral = document.getElementById("contenidoCentral");
+					contenidoCentral.setAttribute("class","d-block");
+					//Selecciona la zona para poner los formularios
+					var contenidoFormularios = document.getElementById("contenidoFormularios");
+					contenidoFormularios.setAttribute("class","d-none");
+					categoriesMenuPopulate();
+					showHomePage();
+				};//Fin de operacion.onsuccess
 			};//FIn de objeto.onsuccess
-			//Se abre el modal que avisa al usuario
-			$('#exitoModal').modal('show');
-			//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-			var contenidoCentral = document.getElementById("contenidoCentral");
-			contenidoCentral.setAttribute("class","d-block");
-			//Selecciona la zona para poner los formularios
-			var contenidoFormularios = document.getElementById("contenidoFormularios");
-			contenidoFormularios.setAttribute("class","d-none");
-			categoriesMenuPopulate();
-			showHomePage();
 		};//Fin de produccionesDB.onsuccess
 }//Fin de deleteProduction
 
