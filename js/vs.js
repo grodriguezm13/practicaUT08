@@ -24,16 +24,15 @@ function crearTablas(){
 		var active = dataBase.result;
 		//Creacion de la tabla Categorias
 		active.createObjectStore("categorias", { keyPath: 'name' });
-			
+					
 		//Creacion de la tabla Producciones
 		active.createObjectStore("producciones", { keyPath: 'title'	});
-		
+
 		//Creacion de la tabla actores
 		active.createObjectStore("actores", { keyPath: 'completo' });
-		
+
 		//Creacion de la tabla directores
 		active.createObjectStore("directores", { keyPath: 'completo' });
-		
 	};//FIn del dataBase.onupgradeneeded
 }//FIn de baseIndexed
 
@@ -169,6 +168,8 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
+	//Crea la base de datos y las tablas
+	crearTablas();
 	//Se crea el array con las categorias y se pasa a la funcion
 	var arrayCat = [category,category1,category2,category3,category4,category5,category6,category7,category8,category9];
 	addValues("categorias",arrayCat);
@@ -1266,8 +1267,6 @@ function showResource(){
 
 //Funcion que llama a todas las funciones que necesita el sistema
 function init(){
-	//Crea la base de datos y las tablas
-	crearTablas();
 	//Instancia los objetos y los mete en la tabla
 	initPopulate();
 	//Muestra el contenido de la pagina

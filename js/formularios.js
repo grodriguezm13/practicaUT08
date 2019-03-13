@@ -498,43 +498,52 @@ function addNewCategory(name,description){
 			//Asigna el resultado a la variable db, que tiene la base de datos 
 			var db = event.target.result;         
 			var addObjectStore = db.transaction(["categorias"],"readwrite").objectStore("categorias");
-			addObjectStore.add(newCategory.getObject());
+			var add = addObjectStore.add(newCategory.getObject());
+			//Si el añadido ha dado error por duplicado
+			add.onerror = function (event) {
+				document.getElementById("nombreMal").style.display = "block";
+				document.getElementById("nombreMal").innerHTML = "La categoria con el nombre "+name+" ya existe";
+				document.getElementById("nombreCat").setAttribute("class","form-control border border-danger");
+			};
+			//Si el añadido ha sido bueno
+			add.onsuccess = function (event) {
+				//Si hay producciones en el array de producciones las asigna a esa categoria
+				if (arrayProducciones.length != 0) {
+					for (let index = 0; index < arrayProducciones.length; index++) {
+						//recorrremos las producciones
+						var encontrado = false;
+						var producciones = video.productions;
+						var produccion = producciones.next();
+						while ((produccion.done !== true) && (!encontrado)){
+							if (arrayProducciones[index] == produccion.value.title) {
+								try {
+									video.assignCategory(newCategory,produccion.value);
+									encontrado = true;
+								} catch (error) {
+									document.getElementById("producMal").style.display = "block";
+									document.getElementById("producMal").innerHTML = "No puedes añadir dos veces la produccion "+produccion.value.title+"";
+								}//Fin del try
+							}//Fin del if
+							produccion = producciones.next();
+						}//Fin del while
+					}//Fin del for
+				}//Fin del if
+				//Se limpia el array
+				while(arrayProducciones.length != 0){
+					arrayProducciones.shift();
+				}
+				//Se abre el modal que avisa al usuario
+				$('#exitoModal').modal('show');
+				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
+				var contenidoCentral = document.getElementById("contenidoCentral");
+				contenidoCentral.setAttribute("class","d-block");
+				//Selecciona la zona para poner los formularios
+				var contenidoFormularios = document.getElementById("contenidoFormularios");
+				contenidoFormularios.setAttribute("class","d-none");
+				categoriesMenuPopulate();
+				showHomePage();
+			};//Fin de add.onsuccess
 		};//Fin de categoriasDB.onsuccess
-		//Si hay producciones en el array de producciones las asigna a esa categoria
-		if (arrayProducciones.length != 0) {
-			for (let index = 0; index < arrayProducciones.length; index++) {
-				//recorrremos las producciones
-				var encontrado = false;
-				var producciones = video.productions;
-				var produccion = producciones.next();
-				while ((produccion.done !== true) && (!encontrado)){
-					if (arrayProducciones[index] == produccion.value.title) {
-						try {
-							video.assignCategory(newCategory,produccion.value);
-							encontrado = true;
-						} catch (error) {
-							document.getElementById("producMal").style.display = "block";
-							document.getElementById("producMal").innerHTML = "No puedes añadir dos veces la produccion "+produccion.value.title+"";
-						}//Fin del try
-					}//Fin del if
-					produccion = producciones.next();
-				}//Fin del while
-			}//Fin del for
-		}//Fin del if
-		//Se limpia el array
-		while(arrayProducciones.length != 0){
-			arrayProducciones.shift();
-		}
-		//Se abre el modal que avisa al usuario
-		$('#exitoModal').modal('show');
-		//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-		var contenidoCentral = document.getElementById("contenidoCentral");
-		contenidoCentral.setAttribute("class","d-block");
-		//Selecciona la zona para poner los formularios
-		var contenidoFormularios = document.getElementById("contenidoFormularios");
-		contenidoFormularios.setAttribute("class","d-none");
-		categoriesMenuPopulate();
-		showHomePage();
 	} catch (error) {
 		document.getElementById("nombreMal").style.display = "block";
 		document.getElementById("nombreMal").innerHTML = "La categoria con el nombre "+name+" ya existe";
@@ -1188,18 +1197,30 @@ function addNewPerson(rol,name, lastName1, born, lastName2, picture){
 			var db = event.target.result;        
 			var addObjectStore = db.transaction([base],"readwrite").objectStore(base);
 			//Añade esa person a la base de datos
-			addObjectStore.add(newPerson.getObject());
+			var add = addObjectStore.add(newPerson.getObject());
+			//Si el añadido ha dado error por duplicado
+			add.onerror = function (event) {
+				document.getElementById("nombreMal").innerHTML = "El "+rol+" "+name+" "+lastName1+" ya existe";
+				document.getElementById("nombreMal").style.display = "block";
+				document.getElementById("nombreActor").setAttribute("class","form-control border border-danger");
+				document.getElementById("lastName1Mal").innerHTML = "El "+rol+" "+name+" "+lastName1+" ya existe";
+				document.getElementById("lastName1Mal").style.display = "block";
+				document.getElementById("lastName1").setAttribute("class","form-control border border-danger");
+			};//FIn de add.onerror
+			//Si el añadido ha sido bueno
+			add.onsuccess = function (event) {
+				//Se abre el modal que avisa al usuario
+				$('#exitoModal').modal('show');
+				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
+				var contenidoCentral = document.getElementById("contenidoCentral");
+				contenidoCentral.setAttribute("class","d-block");
+				//Selecciona la zona para poner los formularios
+				var contenidoFormularios = document.getElementById("contenidoFormularios");
+				contenidoFormularios.setAttribute("class","d-none");
+				showHomePage();
+				categoriesMenuPopulate();
+			};//FIn de add.onsuccess
 		};//Fin de personDB.onsuccess
-		//Se abre el modal que avisa al usuario
-		$('#exitoModal').modal('show');
-		//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-		var contenidoCentral = document.getElementById("contenidoCentral");
-		contenidoCentral.setAttribute("class","d-block");
-		//Selecciona la zona para poner los formularios
-		var contenidoFormularios = document.getElementById("contenidoFormularios");
-		contenidoFormularios.setAttribute("class","d-none");
-		showHomePage();
-		categoriesMenuPopulate();
 	} catch (error) {
 		document.getElementById("nombreMal").innerHTML = "El "+rol+" "+name+" "+lastName1+" ya existe";
 		document.getElementById("nombreMal").style.display = "block";
@@ -2133,13 +2154,13 @@ function formProducciones(tipo){
 		thTipo.appendChild(document.createTextNode("Tipo"));
 		var tbody = document.createElement("tbody");
 		tbody.setAttribute("id","tablaProducciones");
-		//Abre la conexion con la base de datos producciones
-		var request = indexedDB.open("producciones");
+		//Abre la conexion con la base de datos
+		var request = indexedDB.open(nombreDB);
 		//Si ha salido bien
 		request.onsuccess = function(event) {
 			//Asigna el resultado a la variable db, que tiene la base de datos 
 			var db = event.target.result;      
-			var objectStore = db.transaction("producciones").objectStore("producciones");
+			var objectStore = db.transaction(["producciones"],"readonly").objectStore("producciones");
 			//Abre un cursor para recorrer todos los objetos de la base de datos 
 			objectStore.openCursor().onsuccess = function(event) {
 				var produccion = event.target.result;
@@ -2416,64 +2437,72 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 			objetoProduction = new Serie(titulo, publicacion, nacionalidad, sipnosis, imagen, temporada);
 		}
 		//Añade la produccion a la base de datos
-		var produccionesDB = indexedDB.open("producciones");
+		var produccionesDB = indexedDB.open(nombreDB);
 		produccionesDB.onsuccess = function(event) {
 			var db = event.target.result;
-			var addObjectStore = db.transaction("producciones", "readwrite").objectStore("producciones").add(objetoProduction.getObject());
+			var addObjectStore = db.transaction(["producciones"], "readwrite").objectStore("producciones");
+			var add = addObjectStore.add(objetoProduction.getObject());
 			try {
 				//Se añade la produccion al video system
 				video.addProduction(objetoProduction);
 			} catch (error) {
-				document.getElementById("titleMal").innerHTML = "La producción '"+objetoProduction.name+"' ya existe";
+				document.getElementById("titleMal").innerHTML = "La producción '"+objetoProduction.title+"' ya existe";
 				document.getElementById("titleMal").style.display = "block";
+				document.getElementById("titulo").setAttribute("class","form-control border border-danger");
 			}//FIn del try de añadir
-			addObjectStore.onsuccess = function (event) {
+			//Si el añadido a la base de datos da error
+			add.onerror = function (event) {
+				document.getElementById("titleMal").innerHTML = "La producción '"+objetoProduction.title+"' ya existe";
+				document.getElementById("titleMal").style.display = "block";
+				document.getElementById("titulo").setAttribute("class","form-control border border-danger");
+			};//FIn de add.onerror
+			//Si ha ido bien
+			add.onsuccess = function (event) {
 				//Si se añadido bien comienza a asignar las categorias, director y reparto
-				for (let index = 0; index < arrayCategorias.length; index++) {
-					var categoria = arrayCategorias[index];
-					//Abre la conexion con la base de datos categorias
-					var categoriasDB = indexedDB.open("categorias");
-					categoriasDB.onsuccess = function(event) {
-						var db = event.target.result;
-						var objectStore = db.transaction("categorias").objectStore("categorias");
-						var objeto = objectStore.get(categoria);
-						objeto.onsuccess = function(event) {
+				var categoriasDB = indexedDB.open(nombreDB);
+				categoriasDB.onsuccess = function(event) {
+					var db = event.target.result;
+					var objectStore = db.transaction(["categorias"],"readonly").objectStore("categorias");
+					objectStore.onsuccess = function(event) {
+						for (var i in arrayCategorias) {
+							var objeto = objectStore.get(arrayCategorias[i]);
 							try {
-								video.assignCategory(categoria,objetoProduction);
+								video.assignCategory(objeto.result,objetoProduction);
 							} catch (error) {
 								document.getElementById("catMal").innerHTML = "Ha ocurrido un problema al añadir categorias a la producción";
 								document.getElementById("catMal").style.display = "block";
-							}	
-						};//Fin de objectStore.onsuccess
-					};//Fin de categoriasDB.onsuccess
-				}//FIN del for	
+							}
+						}
+					};//Fin de objectStore.onsuccess
+				};//Fin de categoriasDB.onsuccess
+
 				//Abre la conexion con la base de datos directores
-				var directoresDB = indexedDB.open("directores");
+				var directoresDB = indexedDB.open(nombreDB);
 				directoresDB.onsuccess = function(event) {
 					var db = event.target.result;
-					var objectStore = db.transaction("directores").objectStore("directores");
-					var director = arrayDir[0];
-					var objeto = objectStore.get(director);
-					objeto.onsuccess = function(event) {
-						try {
-							video.assignDirector(objeto.result,objetoProduction);
-						} catch (error) {
-							document.getElementById("directorMal").innerHTML = "El director ya tiene asignada esa producción";
-							document.getElementById("directorMal").style.display = "block";
+					var objectStore = db.transaction(["directores"],"readwrite").objectStore("directores");
+					objectStore.onsuccess = function(event) {
+						for (var i in arrayDir) {
+							var objeto = objectStore.get(arrayDir[i]);
+							try {
+								video.assignDirector(objeto.result,objetoProduction);
+							} catch (error) {
+								document.getElementById("directorMal").innerHTML = "El director ya tiene asignada esa producción";
+								document.getElementById("directorMal").style.display = "block";
+							}
 						}
 					};//Fin de objectStore.onsuccess
 				};//Fin de directoresDB.onsuccess
 				//Se asignan el reparto a la produccion si hay
 				if (arrayReparto.length > 0) {
-					for (let index = 0; index < arrayReparto.length; index++) {
-						var actor = arrayReparto[index];
-						//Abre la conexion con la base de datos actores
-						var actoresDB = indexedDB.open("actores");
-						actoresDB.onsuccess = function(event) {
-							var db = event.target.result;
-							var objectStore = db.transaction("actores").objectStore("actores");
-							var objeto = objectStore.get(actor);
-							objeto.onsuccess = function(event) {
+					//Abre la conexion con la base de datos actores
+					var actoresDB = indexedDB.open(nombreDB);
+					actoresDB.onsuccess = function(event) {
+						var db = event.target.result;
+						var objectStore = db.transaction(["actores"],"readonly").objectStore("actores");
+						objectStore.onsuccess = function(event) {
+							for (var i in arrayReparto) {
+								var objeto = objectStore.get(arrayReparto[i]);
 								//Recoge el papel del actor, y si es principal o no
 								var papel = document.forms["addProduction"]["papel"+index+""].value;
 								var principal = document.forms["addProduction"]["principal"+index+""].checked;
@@ -2483,35 +2512,35 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 								} catch (error) {
 									//NO HACE NADA
 								}
-							};//Fin de objectStore.onsuccess
-						};//Fin de actoresDB.onsuccess
-					}//FIN del for
+							}//Fin del for
+						};//Fin de objectStore.onsuccess
+					};//Fin de actoresDB.onsuccess
 				}//FIn de if que comprueba el array de reparto
-			};//FIn de addObjectStore.onsuccess
+				//Se abre el modal que avisa al usuario
+				$('#exitoModal').modal('show');
+				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
+				var contenidoCentral = document.getElementById("contenidoCentral");
+				contenidoCentral.setAttribute("class","d-block");
+				//Selecciona la zona para poner los formularios
+				var contenidoFormularios = document.getElementById("contenidoFormularios");
+				contenidoFormularios.setAttribute("class","d-none");
+				categoriesMenuPopulate();
+				showHomePage();
+				//Se limpia los arrays array
+				while(arrayDir.length != 0){
+					arrayDir.shift();
+				}
+				while(arrayCategorias.length != 0){
+					arrayCategorias.shift();
+				}
+				while(arrayReparto.length != 0){
+					arrayReparto.shift();
+				}
+			};//FIn de add.onsuccess
 		};//Fin de produccionesDB.onsuccess
 	} catch (error) {
 		//alert("Error al crear movie "+titulo+" "+nacionalidad+" "+publicacion+" "+sipnosis+" "+imagen+" "+recurso+" "+coor);
 	}//Fin del try principal
-	//Se abre el modal que avisa al usuario
-	$('#exitoModal').modal('show');
-	//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-	var contenidoCentral = document.getElementById("contenidoCentral");
-	contenidoCentral.setAttribute("class","d-block");
-	//Selecciona la zona para poner los formularios
-	var contenidoFormularios = document.getElementById("contenidoFormularios");
-	contenidoFormularios.setAttribute("class","d-none");
-	categoriesMenuPopulate();
-	showHomePage();
-	//Se limpia los arrays array
-	while(arrayDir.length != 0){
-		arrayDir.shift();
-	}
-	while(arrayCategorias.length != 0){
-		arrayCategorias.shift();
-	}
-	while(arrayReparto.length != 0){
-		arrayReparto.shift();
-	}
 }//Fin de addNewProduction
 
 //Desasigna la produccion de las categorias, actores y director y la elimina del sistema
@@ -2519,10 +2548,10 @@ function deleteProduction(){
 	var pro = this.value;
 	/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
 	//Elimina esa produccion de la base de datos
-	var produccionesDB = window.indexedDB.open("producciones");
+	var produccionesDB = window.indexedDB.open(nombreDB);
 	produccionesDB.onsuccess = function(event) {
 			var db = event.target.result;
-			var deleteObjectStore = db.transaction("producciones", "readwrite").objectStore("producciones");
+			var deleteObjectStore = db.transaction(["producciones"], "readwrite").objectStore("producciones");
 			var objeto = deleteObjectStore.get(pro);
 			objeto.onsuccess = function(event) {
 				var objetoProduccion = null;

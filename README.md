@@ -10,6 +10,10 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.2.3
+- Cambios en el cronometro
+- Mejoras a la hora de gestionar los duplicados en la base de datos
+
 Version 0.2.2
 - Se ha añadido un cronometro a la interfaz junto con su funcionalidad
 

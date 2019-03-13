@@ -1,14 +1,12 @@
+//Recoge el valor del localStorage
 var tiempo = localStorage.getItem("cronometro");
-var centesimas = null;
-var segundos = null;
-var minutos = null;
-var horas = null;
-if (tiempo == " ") {
-    centesimas = 0;
-    segundos = 0;
-    minutos = 0;
-    horas = 0;
-}else{
+var centesimas = 0;
+var segundos = 0;
+var minutos = 0;
+var horas = 0;
+var control = null;
+//Si encuentra valor hace el split a : y muestra los valores
+if (tiempo != null){
     var cadena = tiempo.split(":");
     centesimas = cadena[3];
     segundos = cadena[2];
@@ -18,20 +16,26 @@ if (tiempo == " ") {
 	Segundos.innerHTML = ":"+segundos;
 	Minutos.innerHTML = ":"+minutos;
 	Horas.innerHTML = horas;
-}
+}else{
+	Centesimas.innerHTML = ":00";
+	Segundos.innerHTML = ":00";
+	Minutos.innerHTML = ":00";
+	Horas.innerHTML = "00";
+}//FIn del ifelse
 
 function inicio () {
 	control = setInterval(cronometro,10);
 	document.getElementById("inicio").disabled = true;
 	document.getElementById("parar").disabled = false;
-	document.getElementById("reinicio").disabled = false;
 }
+
 function parar () {
 	clearInterval(control);
 	document.getElementById("parar").disabled = true;
     document.getElementById("inicio").disabled = false;
     localStorage.setItem("cronometro",horas+":"+minutos+":"+segundos+":"+centesimas);
 }
+
 function reinicio () {
 	clearInterval(control);
 	centesimas = 0;
@@ -44,9 +48,9 @@ function reinicio () {
 	Horas.innerHTML = "00";
 	document.getElementById("inicio").disabled = false;
 	document.getElementById("parar").disabled = true;
-    document.getElementById("reinicio").disabled = true;
     localStorage.setItem("cronometro",horas+":"+minutos+":"+segundos+":"+centesimas);
 }
+
 function cronometro () {
 	if (centesimas < 99) {
 		centesimas++;
