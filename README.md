@@ -10,7 +10,10 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
-FALTA problema con las modificaciones, eliminar director de produccion
+Version 0.2.5
+- Cambios en la funcion getObject de los objetos Movie y Serie
+- Los formularios de moficiacion validan mejor los campos
+- Se han corregido fallos en los objetos del sistema
 
 Version 0.2.4
 - Ahora puedes pinchar sobre las tarjetas y no solo sobre los botones de las tarjetas

@@ -1,10 +1,3 @@
-//Se crea el objeto VideoSystem y se le añade el nombre 
-try {
-	var video = VideoSystem.getInstance();
-	video.name = "GUIROMO CHANNEL";
-} catch (error) {
-	console.log("" + error);
-}
 //Array para guardar los recursos del sistema
 var arrayRecursos = new Array();
 //Array para guardar las temporadas del sistema
@@ -152,6 +145,30 @@ function initPopulate(){
 	}
 
 	/* FIN DE LA CREACION DE OBJETOS */
+	//Se crea el array con las categorias y se pasa a la funcion
+	var arrayCat = [category,category1,category2,category3,category4,category5,category6,category7,category8,category9];
+	addValues("categorias",arrayCat);
+
+	//Se crea el array con las producciones y se pasa a la funcion
+	var arrayPro = [movie,movie1,movie2,movie3,movie4,movie5,movie6,serie,serie1,serie2,serie3];
+	addValues("producciones",arrayPro);
+
+	//Se crea el array con los actores y se pasa a la funcion
+	var arrayAct = [persona,persona1,persona4,persona5,persona7];
+	addValues("actores",arrayAct);
+	
+	//Se crea el array con los directores y se pasa a la funcion
+	var arrayDir = [persona2,persona3,persona6,persona8];
+	addValues("directores",arrayDir);
+	
+	//Se crea el objeto VideoSystem y se le añade el nombre 
+	try {
+		video = VideoSystem.getInstance();
+		video.name = "GUIROMO CHANNEL";
+	} catch (error) {
+		console.log("" + error);
+	}
+
 	/* INICIO DE LAS RELACIONES MEDIANTE LAS FUNCIONES DE VIDEOSYSTEM */
 	//Añadimos las categorias 
 	try {
@@ -168,9 +185,8 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
-	//Se crea el array con las categorias y se pasa a la funcion
-	var arrayCat = [category,category1,category2,category3,category4,category5,category6,category7,category8,category9];
-	addValues("categorias",arrayCat);
+
+	
 
 	//Añadimos los usuarios
 	try {
@@ -197,9 +213,7 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
-	//Se crea el array con las producciones y se pasa a la funcion
-	var arrayPro = [movie,movie1,movie2,movie3,movie4,movie5,movie6,serie,serie1,serie2,serie3];
-	addValues("producciones",arrayPro);
+	
 
 	//Añadimos los actores
 	try {
@@ -211,9 +225,6 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
-	//Se crea el array con los actores y se pasa a la funcion
-	var arrayAct = [persona,persona1,persona4,persona5,persona7];
-	addValues("actores",arrayAct);
 
 	//Añadimos un director
 	try {
@@ -224,9 +235,7 @@ function initPopulate(){
 	} catch (error) {
 		console.log("" + error);
 	}
-	//Se crea el array con los directores y se pasa a la funcion
-	var arrayDir = [persona2,persona3,persona6,persona8];
-	addValues("directores",arrayDir);
+
 
 	//Asignamos una produccion a una categoria
 	try {
@@ -1269,15 +1278,20 @@ function showResource(){
 
 //Funcion que llama a todas las funciones que necesita el sistema
 function init(){
-	//Crea la base de datos y las tablas
+	//Llama a la funcion para crear la base de datos
 	crearTablas();
 	//Instancia los objetos y los mete en la tabla
 	initPopulate();
-	//Muestra el contenido de la pagina
-	showHomePage();
-	categoriesMenuPopulate();
+	//Muestra el contenido de la pagina con retardo para 
+	//darle tiempo a la base de datos
+	window.setTimeout(InitialPage,100);
 	//Esta funcion esta en el archivo formularios.js
 	checkCookie();
 }//Fin de init
+
+function InitialPage(){
+	showHomePage();
+	categoriesMenuPopulate();
+}
 
 window.onload = init;
