@@ -10,6 +10,14 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.3
+- Se han creado las bases de datos con la relacion entre los objetos del sistema
+- Se ha creado una funcion para mostrar el modal y la pagina de inicio
+- Cambios menores en los comentarios del codigo
+- Las producciones de las categorias se muestran en funcion de la relacion de las bases de datos
+- Las producciones del actor se muestran en funcion de la relacion de las bases de datos
+- Las producciones del director se muestran en funcion de la relacion de las bases de datos
+
 Version 0.2.5
 - Cambios en la funcion getObject de los objetos Movie y Serie
 - Los formularios de moficiacion validan mejor los campos

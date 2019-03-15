@@ -15,17 +15,25 @@ function crearTablas(){
 
 	dataBase.onupgradeneeded = function (e) {  
 		var active = dataBase.result;
+		/* TABLAS DE OBJETOS */
 		//Creacion de la tabla Categorias
-		active.createObjectStore("categorias", { keyPath: 'name' });
-					
+		active.createObjectStore("categorias", { keyPath: 'name' });	
 		//Creacion de la tabla Producciones
 		active.createObjectStore("producciones", { keyPath: 'title'	});
-
 		//Creacion de la tabla actores
 		active.createObjectStore("actores", { keyPath: 'completo' });
-
 		//Creacion de la tabla directores
 		active.createObjectStore("directores", { keyPath: 'completo' });
+		//Creacion de la tabla usuarios
+		active.createObjectStore("usuarios", { keyPath: 'email' });
+
+		/* TABLAS DE RELACIONES ENTRE OBJETOS */
+		//Creacion de la tabla de producciones de una categoria
+		active.createObjectStore("categoryPro", { keyPath: 'category' });
+		//Creacion de la tabla de producciones de un director
+		active.createObjectStore("directorPro", { keyPath: 'completo' });
+		//Creacion de la tabla de reaprto de una produccion
+		active.createObjectStore("repartoPro", { keyPath: 'completo' });
 	};//FIn del dataBase.onupgradeneeded
 }//FIn de baseIndexed
 
@@ -49,6 +57,26 @@ function addValues(tabla,array) {
 		};//Fin de tablaCategorias.transaction.oncomplete
 	};//Fin de request.onsuccess
 }//Fin de addvalues
+
+//añade las relaciones iniciales a la base de datos
+function addRelaciones(tabla,objeto) {
+	//Abre la conexion con la base de datos 
+	var request = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;         
+		var objectStore = db.transaction([tabla],"readwrite").objectStore(tabla);
+		// Se usa transaction.oncomplete para asegurarse que la creación del almacén 
+		// haya finalizado antes de añadir los datos en el.
+		objectStore.transaction.oncomplete = function(event) {
+			// Guarda los datos en el almacén recién creado.
+			var addObjectStore = db.transaction([tabla],"readwrite").objectStore(tabla);
+			//Se añade a la tabla como valores las productions
+			addObjectStore.add(objeto);
+		};//Fin de tablaCategorias.transaction.oncomplete
+	};//Fin de request.onsuccess
+}//Fin de addRelaciones
 
 //Funcion que inicializa todos los objetos y la relacion entre ellos
 function initPopulate(){	
@@ -161,6 +189,10 @@ function initPopulate(){
 	var arrayDir = [persona2,persona3,persona6,persona8];
 	addValues("directores",arrayDir);
 	
+	//Se crea el array con los usuarios y se pasa a la funcion
+	var arrayUser = [user,user1,user2,user3];
+	addValues("usuarios",arrayUser);
+
 	//Se crea el objeto VideoSystem y se le añade el nombre 
 	try {
 		video = VideoSystem.getInstance();
@@ -172,127 +204,174 @@ function initPopulate(){
 	/* INICIO DE LAS RELACIONES MEDIANTE LAS FUNCIONES DE VIDEOSYSTEM */
 	//Añadimos las categorias 
 	try {
-		video.addCategory(category);
-		video.addCategory(category1);
-		video.addCategory(category2);
-		video.addCategory(category3);
-		video.addCategory(category4);
-		video.addCategory(category5);
-		video.addCategory(category6);
-		video.addCategory(category7);
-		video.addCategory(category8);
-		video.addCategory(category9);
+		for (let i in arrayCat) {
+			video.addCategory(arrayCat[i]);	
+		}
 	} catch (error) {
 		console.log("" + error);
 	}
-
-	
-
 	//Añadimos los usuarios
 	try {
-		video.addUser(user);
-		video.addUser(user1);
-		video.addUser(user2);
-		video.addUser(user3);
+		for (let i in arrayUser) {
+			video.addUser(arrayUser[i]);
+		}
 	} catch (error) {
 		console.log("" + error);
 	}
 	//Añadimos las producciones
 	try {
-		video.addProduction(movie);
-		video.addProduction(movie1);
-		video.addProduction(movie2);
-		video.addProduction(movie3);
-		video.addProduction(movie4);
-		video.addProduction(movie5);
-		video.addProduction(movie6);
-		video.addProduction(serie);
-		video.addProduction(serie1);
-		video.addProduction(serie2);
-		video.addProduction(serie3);
+		for (let i in arrayPro) {
+			video.addProduction(arrayPro[i]);
+		}
 	} catch (error) {
 		console.log("" + error);
 	}
-	
-
 	//Añadimos los actores
 	try {
-		video.addActor(persona);
-		video.addActor(persona1);
-		video.addActor(persona4);
-		video.addActor(persona5);
-		video.addActor(persona7);
+		for (let i in arrayAct) {
+			video.addActor(arrayAct[i]);
+		}
 	} catch (error) {
 		console.log("" + error);
 	}
-
 	//Añadimos un director
 	try {
-		video.addDirector(persona2);
-		video.addDirector(persona3);
-		video.addDirector(persona6);
-		video.addDirector(persona8);
+		for (let i in arrayDir) {
+			video.addDirector(arrayDir[i]);
+		}
 	} catch (error) {
 		console.log("" + error);
 	}
-
 
 	//Asignamos una produccion a una categoria
 	try {
+		var objetoCategory = {category: category.name, productions: [movie.getObject(),movie1.getObject(),movie3.getObject()] };
+		addRelaciones("categoryPro",objetoCategory);
 		video.assignCategory(category,movie);
 		video.assignCategory(category,movie1);
 		video.assignCategory(category,movie3);
+		
+		var objetoCategory1 = {category: category1.name, productions: [movie6.getObject(),movie2.getObject(),serie1.getObject()] };
+		addRelaciones("categoryPro",objetoCategory1);
 		video.assignCategory(category1,movie6);
 		video.assignCategory(category1,movie2);
 		video.assignCategory(category1,serie1);
+
+		var objetoCategory2 = {category: category2.name, productions: [movie2.getObject(),movie4.getObject(),movie5.getObject()] };
+		addRelaciones("categoryPro",objetoCategory2);
 		video.assignCategory(category2,movie2);
 		video.assignCategory(category2,movie4);
 		video.assignCategory(category2,movie5);
+
+		var objetoCategory3 = {category: category3.name, productions: [movie.getObject(),movie3.getObject(),movie5.getObject()] };
+		addRelaciones("categoryPro",objetoCategory3);
 		video.assignCategory(category3,movie);
 		video.assignCategory(category3,movie3);
 		video.assignCategory(category3,movie5);
+
+		var objetoCategory4 = {category: category4.name, productions: [serie1.getObject(),serie2.getObject(),movie5.getObject()] };
+		addRelaciones("categoryPro",objetoCategory4);
 		video.assignCategory(category4,serie1);
 		video.assignCategory(category4,serie2);
 		video.assignCategory(category4,movie5);
+
+		var objetoCategory5 = {category: category5.name, productions: [movie4.getObject(),movie2.getObject(),serie1.getObject(),serie3.getObject()] };
+		addRelaciones("categoryPro",objetoCategory5);
 		video.assignCategory(category5,movie6);
 		video.assignCategory(category5,movie4);
-		video.assignCategory(category5,movie2);
+		video.assignCategory(category5,movie2);	
+
+		var objetoCategory6 = {category: category6.name, productions: [serie1.getObject(),serie3.getObject()] };
+		addRelaciones("categoryPro",objetoCategory6);
 		video.assignCategory(category6,serie1);
 		video.assignCategory(category6,serie3);
-		video.assignCategory(category7,movie6);
+
+		var objetoCategory7 = {category: category7.name, productions: [movie6.getObject(),serie3.getObject()] };
+		addRelaciones("categoryPro",objetoCategory7);
+		video.assignCategory(category7,movie6);		
 		video.assignCategory(category7,serie3);
+
+		var objetoCategory8 = {category: category8.name, productions: [movie5.getObject()] };
+		addRelaciones("categoryPro",objetoCategory8);
 		video.assignCategory(category8,movie5);
+
+		var objetoCategory9 = {category: category9.name, productions: [] };
+		addRelaciones("categoryPro",objetoCategory9);
 	} catch (error) {
 		console.log("" + error);
 	}
 	//Asignamos una produccion a un director
 	try {
+		var objetoDirector = {completo: persona2.completo, productions: [movie.getObject(),movie1.getObject()] };
+		addRelaciones("directorPro",objetoDirector);
 		video.assignDirector(persona2,movie);
 		video.assignDirector(persona2,movie1);
+
+		var objetoDirector1 = {completo: persona3.completo, productions: [movie2.getObject()] };
+		addRelaciones("directorPro",objetoDirector1);
 		video.assignDirector(persona3,movie2);
+
+		var objetoDirector2 = {completo: persona6.completo, productions: [movie3.getObject(),movie4.getObject()] };
+		addRelaciones("directorPro",objetoDirector2);
 		video.assignDirector(persona6,movie3);
 		video.assignDirector(persona6,movie4);
+
+		var objetoDirector3 = {completo: persona8.completo, productions: [movie5.getObject(),movie6.getObject()] };
+		addRelaciones("directorPro",objetoDirector3);
 		video.assignDirector(persona8,movie5);
 		video.assignDirector(persona8,movie6);
 	} catch (error) {
 		console.log("" + error);
 	}
-	//Asignamos una produccion a un actorr
+	//Asignamos una produccion a un actor
 	try {	
+		var objetoReparto = {completo: persona.completo, productions: [
+																		{produccion: movie.getObject(),papel: "Hulk", principal: true},
+																		{produccion: movie1.getObject(),papel: "Ciudadano", principal: false},
+																		{produccion: movie2.getObject(),papel: "Nemesio", principal: true}
+																		]};
+		addRelaciones("repartoPro",objetoReparto);
 		video.assignActor(persona,movie,"Hulk",true);
 		video.assignActor(persona,movie1,"Ciudadano",false);
 		video.assignActor(persona,movie2,"Nemesio",true);
-		video.assignActor(persona4,movie,"Extra",false);
-		video.assignActor(persona4,movie3,"Ciudadano",false);
-		video.assignActor(persona5,movie4,"Ciudadano",false);
-		video.assignActor(persona5,movie5,"Ciudadano",false);
-		video.assignActor(persona5,movie6,"Ciudadano",false);
-		video.assignActor(persona7,movie5,"Ciudadano",false);
-		video.assignActor(persona7,movie6,"Ciudadano",false);
+
+		var objetoReparto1 = {completo: persona1.completo, productions: [
+																		{produccion: serie.getObject(),papel: "Mago Invisible", principal: true},
+																		{produccion: serie1.getObject(),papel: "Extra", principal: false},
+																		{produccion: serie2.getObject(),papel: "Barry Allen/The Flash", principal: true},
+																		{produccion: serie3.getObject(),papel: "Ciudadano", principal: false}
+																		]};
+		addRelaciones("repartoPro",objetoReparto1);
 		video.assignActor(persona1,serie,"Mago Invisible",true);
 		video.assignActor(persona1,serie1,"Extra",false);
 		video.assignActor(persona1,serie2,"Barry Allen/The Flash",true);	
 		video.assignActor(persona1,serie3,"Ciudadano",false);
+
+		var objetoReparto4 = {completo: persona4.completo, productions: [
+																		{produccion: movie.getObject(),papel: "Extra", principal: false},
+																		{produccion: movie3.getObject(),papel: "Ciudadano", principal: false}
+																		]};
+		addRelaciones("repartoPro",objetoReparto4);
+		video.assignActor(persona4,movie,"Extra",false);
+		video.assignActor(persona4,movie3,"Ciudadano",false);
+
+		var objetoReparto5 = {completo: persona5.completo, productions: [
+																		{produccion: movie4.getObject(),papel: "Ciudadano", principal: false},
+																		{produccion: movie5.getObject(),papel: "Ciudadano", principal: false},
+																		{produccion: movie6.getObject(),papel: "Ciudadano", principal: false}
+																		]};
+		addRelaciones("repartoPro",objetoReparto5);
+		video.assignActor(persona5,movie4,"Ciudadano",false);
+		video.assignActor(persona5,movie5,"Ciudadano",false);
+		video.assignActor(persona5,movie6,"Ciudadano",false);
+
+		var objetoReparto7 = {completo: persona5.completo, productions: [
+																		{produccion: movie5.getObject(),papel: "Ciudadano", principal: false},
+																		{produccion: movie6.getObject(),papel: "Ciudadano", principal: false}
+																		]};
+		addRelaciones("repartoPro",objetoReparto7);
+		video.assignActor(persona7,movie5,"Ciudadano",false);
+		video.assignActor(persona7,movie6,"Ciudadano",false);
 	} catch (error) {
 		console.log("" + error);
 	}
@@ -672,13 +751,13 @@ function showDirectors(){
 //Dado un actor muestra toda su información relacionada, incluida sus producciones.
 function showActor(){
 	//Segun donde hayas pinchado, si en la tarjeta o en el boton recoge el valor
-	var nombre = this.value || this.id;
+	var nombreActor = this.value || this.id;
 	//Quita el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
-	tituloContenido.innerHTML = nombre;
+	tituloContenido.innerHTML = nombreActor;
 	tituloContenido.style.display = "block";
 	//Actualiza las migas de pan
-	breadcrumb("Actor","Actores",nombre);
+	breadcrumb("Actor","Actores",nombreActor);
 
 	//Se selecciona la zona donde va a ir el nuevo contenido
 	var contenido = document.getElementById("tarjetasZona");
@@ -697,7 +776,7 @@ function showActor(){
 		var db = event.target.result;         
 		var objectStore = db.transaction(["actores"],"readonly").objectStore("actores");
 		//Obtiene el objeto de la base de datos
-		var objeto = objectStore.get(nombre);
+		var objeto = objectStore.get(nombreActor);
 		objeto.onsuccess = function(event) {
 			var actor = objeto.result;
 			//Crea la tarjeta del actor en la zona central
@@ -742,24 +821,34 @@ function showActor(){
 			film.setAttribute("class","card-text cajaTitulo");
 			film.appendChild(document.createTextNode("Producciones en las que ha participado:"));
 			cuerpo.appendChild(film);
-			//Muestra las producciones en las que esta asignado el actor
-			var productions = video.getProductionsActor(actor);
-			var production = productions.next();
-			while (production.done !== true){
-				var filmDescript = document.createElement("p");
-				filmDescript.setAttribute("class","card-text cajaDescripcion");
-				filmDescript.appendChild(document.createTextNode("Titulo: "));
-				var proBtn = document.createElement("button");
-				proBtn.setAttribute("class","card-text btn btn-link ");
-				proBtn.setAttribute("value",production.value.title);
-				proBtn.appendChild(document.createTextNode(production.value.title));
-				proBtn.addEventListener("click", showProduction); 
-				filmDescript.appendChild(proBtn);
-				filmDescript.appendChild(document.createTextNode(". Papel: "+production.papel));
-				cuerpo.appendChild(filmDescript);
-				//Pasa a la siguiente produccion del actor
-				production = productions.next();
-			}//Fin del while iterador de producciones de un actor
+
+			//Abre la conexion con la base de datos
+			var request = indexedDB.open(nombreDB);
+			//Si ha salido bien
+			request.onsuccess = function(event) {
+				//Asigna el resultado a la variable db, que tiene la base de datos 
+				var db = event.target.result;         
+				var objectStore = db.transaction(["repartoPro"],"readonly").objectStore("repartoPro");
+				//Obtiene el objeto de la base de datos
+				var objeto = objectStore.get(nombreActor);
+				objeto.onsuccess = function(event) {
+					//Crea un array con las producciones de esa categoria
+					var producciones = event.target.result.productions;
+					for (var i = 0; i < producciones.length; i++) {
+						var filmDescript = document.createElement("p");
+						filmDescript.setAttribute("class","card-text cajaDescripcion");
+						filmDescript.appendChild(document.createTextNode("Titulo: "));
+						var proBtn = document.createElement("button");
+						proBtn.setAttribute("class","card-text btn btn-link ");
+						proBtn.setAttribute("value",producciones[i].produccion.title);
+						proBtn.appendChild(document.createTextNode(producciones[i].produccion.title));
+						proBtn.addEventListener("click", showProduction); 
+						filmDescript.appendChild(proBtn);
+						filmDescript.appendChild(document.createTextNode(". Papel: "+producciones[i].papel));
+						cuerpo.appendChild(filmDescript);
+					}//Fin del for
+				};//Fin de objeto.onsuccess
+			};//Fin de request.onsuccess
 		};//Fin de objeto.onsuccess
 	};//FIn de request.onsuccess	
 }//Fin de showActor
@@ -767,13 +856,13 @@ function showActor(){
 //Dado un director, muestra toda su información relacionada, incluida sus producciones
 function showDirector(){
 	//Segun donde hayas pinchado, si en la tarjeta o en el boton recoge el valor
-	var nombre = this.value || this.id;
+	var nombreDirector = this.value || this.id;
 	//Quita el titulo de la zona
 	var tituloContenido = document.getElementById("tituloZona");
-	tituloContenido.innerHTML = nombre;
+	tituloContenido.innerHTML = nombreDirector;
 	tituloContenido.style.display = "block";
 	//Actualiza las migas de pan
-	breadcrumb("Director","Directores",nombre);
+	breadcrumb("Director","Directores",nombreDirector);
 
 	//Se selecciona la zona donde va a ir el nuevo contenido
 	var contenido = document.getElementById("tarjetasZona");
@@ -792,7 +881,7 @@ function showDirector(){
 		var db = event.target.result;         
 		var objectStore = db.transaction(["directores"],"readonly").objectStore("directores");
 		//Obtiene el objeto de la base de datos
-		var objeto = objectStore.get(nombre);
+		var objeto = objectStore.get(nombreDirector);
 		objeto.onsuccess = function(event) {
 			var director = objeto.result;
 			//Crea la tarjeta del director en la zona central
@@ -839,23 +928,32 @@ function showDirector(){
 			film.setAttribute("class","card-text cajaTitulo");
 			film.appendChild(document.createTextNode("Producciones que ha dirigido:"));
 			cuerpo.appendChild(film);
-			//Muestra las producciones en las que esta asignado el director
-			var productions = video.getProductionsDirector(director);
-			var production = productions.next();
-			while (production.done !== true){
-				var filmDescript = document.createElement("p");
-				filmDescript.setAttribute("class","card-text cajaDescripcion");
-				filmDescript.appendChild(document.createTextNode("Titulo: "));
-				var proBtn = document.createElement("button");
-				proBtn.setAttribute("class","card-text btn btn-link ");
-				proBtn.setAttribute("value",production.value.title);
-				proBtn.appendChild(document.createTextNode(production.value.title));
-				proBtn.addEventListener("click", showProduction); 
-				filmDescript.appendChild(proBtn);
-				cuerpo.appendChild(filmDescript);
-				//Pasa a la siguiente produccion del director
-				production = productions.next();
-			}//Fin del while iterador de producciones de un director
+			//Abre la conexion con la base de datos
+			var request = indexedDB.open(nombreDB);
+			//Si ha salido bien
+			request.onsuccess = function(event) {
+				//Asigna el resultado a la variable db, que tiene la base de datos 
+				var db = event.target.result;         
+				var objectStore = db.transaction(["directorPro"],"readonly").objectStore("directorPro");
+				//Obtiene el objeto de la base de datos
+				var objeto = objectStore.get(nombreDirector);
+				objeto.onsuccess = function(event) {
+					//Crea un array con las producciones de esa categoria
+					var producciones = event.target.result.productions;
+					for (var i = 0; i < producciones.length; i++) {
+						var filmDescript = document.createElement("p");
+						filmDescript.setAttribute("class","card-text cajaDescripcion");
+						filmDescript.appendChild(document.createTextNode("Titulo: "));
+						var proBtn = document.createElement("button");
+						proBtn.setAttribute("class","card-text btn btn-link ");
+						proBtn.setAttribute("value",producciones[i].title);
+						proBtn.appendChild(document.createTextNode(producciones[i].title));
+						proBtn.addEventListener("click", showProduction); 
+						filmDescript.appendChild(proBtn);
+						cuerpo.appendChild(filmDescript);
+					}//Fin del for
+				};//Fin de objeto.onsuccess
+			};//Fin de request.onsuccess
 		};//Fin de objeto.onsuccess
 	};//FIn de request.onsuccess	
 }//Fin de showDirector
@@ -880,7 +978,7 @@ function showProductions(){
 	while (contenido.firstChild) {
 		contenido.removeChild(contenido.firstChild);
 	}
-
+	
 	//SE PONE EL NUEVO CONTENIDO QUE TIENE QUE SER LAS PRODUCCIONES DE UNA CATEGORIA
 	//Abre la conexion con la base de datos categorias
 	var request = indexedDB.open(nombreDB);
@@ -888,19 +986,17 @@ function showProductions(){
 	request.onsuccess = function(event) {
 		//Asigna el resultado a la variable db, que tiene la base de datos 
 		var db = event.target.result;         
-		var objectStore = db.transaction(["categorias"],"readonly").objectStore("categorias");
+		var objectStore = db.transaction(["categoryPro"],"readonly").objectStore("categoryPro");
 		var objeto = objectStore.get(nomCat);
 		//Abre un cursor para recorrer todos los objetos de la base de datos 
 		objeto.onsuccess = function(event) {
-			var categoria = event.target.result;
-			//Comienza el iterador de las producciones de esa categoria
-			var productions = video.getProductionsCategory(categoria);
-			var production = productions.next();
-			while (production.done !== true){
+			//Crea un array con las producciones de esa categoria
+			var producciones = event.target.result.productions;
+			for (var i = 0; i < producciones.length; i++) {
 				//Crea las tarjetas de las producciones en la zona central
 				var tarjeta = document.createElement("div");
 				tarjeta.setAttribute("class","col-lg-12 col-md-12 mb-4");
-				tarjeta.setAttribute("id",production.value.title);	
+				tarjeta.setAttribute("id",producciones[i].title);	
 				tarjeta.addEventListener("click", showProduction);
 				var borde = document.createElement("div");
 				borde.setAttribute("class","card h-100");
@@ -910,7 +1006,7 @@ function showProductions(){
 				imagen.setAttribute("class","card-img");
 				var tipo = document.createElement("span");
 				tipo.setAttribute("class","card-text");
-				if(production.value instanceof Movie){
+				if(producciones[i].tipo = "Movie"){
 					tipo.appendChild(document.createTextNode("Pelicula"));
 				}else{
 					tipo.appendChild(document.createTextNode("Serie"));
@@ -920,18 +1016,18 @@ function showProductions(){
 				/* ESTA LINEA CAMBIA EL ENLACE DE LA FOTO DE LAS TARJETAS*/ 
 				//imagen.setAttribute("src","img/"+production.value.title+".jpg");
 				imagen.setAttribute("src","img/Portada.jpg");
-				imagen.setAttribute("alt",production.value.title);
+				imagen.setAttribute("alt",producciones[i].title);
 				var buttonTitle = document.createElement("button");
 				//id que sirve para recoger la produccion pulsada en el evento
 				buttonTitle.setAttribute("id","botonProduccion");
 				buttonTitle.setAttribute("type","button");
-				buttonTitle.setAttribute("value",production.value.title);
+				buttonTitle.setAttribute("value",producciones[i].title);
 				buttonTitle.setAttribute("class","btn btn-link btn-lg btn-block");
-				buttonTitle.appendChild(document.createTextNode(production.value.title));	
+				buttonTitle.appendChild(document.createTextNode(producciones[i].title));	
 				var descripProduction = document.createElement("p");
 				descripProduction.setAttribute("class","card-text");
 				/* ESTA LINEA CAMBIA LA DESCRIPCION DE LAS TARJETAS */ 
-				descripProduction.appendChild(document.createTextNode(production.value.synopsis));
+				descripProduction.appendChild(document.createTextNode(producciones[i].synopsis));
 				var valoracion = document.createElement("div");
 				valoracion.setAttribute("class","card-footer");
 				var estrellas = document.createElement("small");
@@ -949,10 +1045,7 @@ function showProductions(){
 				cuerpo.appendChild(descripProduction);
 				cuerpo.appendChild(valoracion);
 				valoracion.appendChild(estrellas);
-			
-				//Pasa a la siguiente produccion
-				production = productions.next();
-			}//fin del while iterador
+			}//Fin del for
 		};//Fin de objeto.onsuccess
 	};//Fin de request.onsuccess
 }//Fin de showProductions

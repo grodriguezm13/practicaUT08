@@ -15,6 +15,10 @@ function formCategorias(tipo){
 	}
 
 	if (tipo == "add") {
+		//Se limpia el array
+		while(arrayProducciones.length != 0){
+			arrayProducciones.shift();
+		}
 		var formulario = document.createElement("form");
 		formulario.setAttribute("name","addCategory");
 		formulario.setAttribute("action","");
@@ -508,40 +512,37 @@ function addNewCategory(name,description){
 			//Si el añadido ha sido bueno
 			add.onsuccess = function (event) {
 				//Si hay producciones en el array de producciones las asigna a esa categoria
-				if (arrayProducciones.length != 0) {
-					for (let index = 0; index < arrayProducciones.length; index++) {
-						//recorrremos las producciones
-						var encontrado = false;
-						var producciones = video.productions;
-						var produccion = producciones.next();
-						while ((produccion.done !== true) && (!encontrado)){
-							if (arrayProducciones[index] == produccion.value.title) {
-								try {
-									video.assignCategory(newCategory,produccion.value);
-									encontrado = true;
-								} catch (error) {
-									document.getElementById("producMal").style.display = "block";
-									document.getElementById("producMal").innerHTML = "No puedes añadir dos veces la produccion "+produccion.value.title+"";
-								}//Fin del try
+				if (arrayProducciones.length > 0) {
+					var array =  new Array();
+					//Abre la conexion con la base de datos categorias
+					var request = indexedDB.open(nombreDB);
+					//Si ha salido bien
+					request.onsuccess = function(event) {
+						//Asigna el resultado a la variable db, que tiene la base de datos 
+						var db = event.target.result;         
+						var objectStore = db.transaction(["producciones"],"readonly").objectStore("producciones");
+						//Abre un cursor para recorrer todos los objetos de la base de datos 
+						objectStore.openCursor().onsuccess = function(event) {
+							var cursor = event.target.result;
+							//Si el cursor devuelve un valor pinta las tarjetas
+							if(cursor){
+								for (let index = 0; index < arrayProducciones.length; index++) {
+									if(cursor.value.title == arrayProducciones[index]){
+										array.push(cursor.value);
+										//Se añade a la base de datos de las relaciones
+										var objetoCategory = {category: newCategory.name, productions: array };
+										addRelaciones("categoryPro",objetoCategory);
+									}
+								}
+								//Pasa a la siguiente categoria
+								cursor.continue();
 							}//Fin del if
-							produccion = producciones.next();
-						}//Fin del while
-					}//Fin del for
+						};
+						setTimeout(exito,1000);			
+					};
+				}else{
+					exito();
 				}//Fin del if
-				//Se limpia el array
-				while(arrayProducciones.length != 0){
-					arrayProducciones.shift();
-				}
-				//Se abre el modal que avisa al usuario
-				$('#exitoModal').modal('show');
-				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-				var contenidoCentral = document.getElementById("contenidoCentral");
-				contenidoCentral.setAttribute("class","d-block");
-				//Selecciona la zona para poner los formularios
-				var contenidoFormularios = document.getElementById("contenidoFormularios");
-				contenidoFormularios.setAttribute("class","d-none");
-				categoriesMenuPopulate();
-				showHomePage();
 			};//Fin de add.onsuccess
 		};//Fin de categoriasDB.onsuccess
 	} catch (error) {
@@ -567,22 +568,21 @@ function deleteCategory(){
 				var objetoCategoria = new Category (objeto.result.name, objeto.result.description);
 				//Se elimina por el key path
 				deleteObjectStore.delete(objetoCategoria.name);
+				//Se conecta a la base de datos de las relacion para eliminar el objeto de alli
+				var deleteObjectRelation = db.transaction(["categoryPro"],"readwrite").objectStore("categoryPro");
+				var objeto2 = deleteObjectRelation.get(btnValor);
+				objeto2.onsuccess = function(event) {
+					//Se elimina por el key path
+					deleteObjectRelation.delete(objetoCategoria.name);
+				};
 				try {
 					//Elimina el objeto que se ha encontrado del sistema
 					video.removeCategory(objetoCategoria);
 				} catch (error) {
 					//NO HACE NADA
 				}
-				//Se abre el modal que avisa al usuario
-				$('#exitoModal').modal('show');
-				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-				var contenidoCentral = document.getElementById("contenidoCentral");
-				contenidoCentral.setAttribute("class","d-block");
-				//Selecciona la zona para poner los formularios
-				var contenidoFormularios = document.getElementById("contenidoFormularios");
-				contenidoFormularios.setAttribute("class","d-none");
-				categoriesMenuPopulate();
-				showHomePage();
+				//Muestra el modal y la pagina de inicio
+				exito();
 			};//FIn de objeto.onsuccess
 	};//Fin de categoriasDB.onsuccess
 }//Fin de deleteCategory
@@ -718,13 +718,8 @@ function validarModificacionCategoria(objetoCategoria){
 						}
 						categoria = categorias.next();
 					}//Fin del while
-					//Se abre el modal que avisa al usuario
-					$('#exitoModal').modal('show');
-					//Si todo ha salido bien vuelve al menu principal
-					showHomePage();
-					categoriesMenuPopulate();
-					contenidoCentral.setAttribute("class","d-block");
-					contenidoFormularios.setAttribute("class","d-none");
+					//Muestra el modal y la pagina de inicio
+					exito();
 				};//Fin del evento update.onsuccess
 			};//Fin de objeto.onsuccess
 		};//FIn de request.onsuccess
@@ -1227,16 +1222,8 @@ function addNewPerson(rol,name, lastName1, born, lastName2, picture){
 			};//FIn de add.onerror
 			//Si el añadido ha sido bueno
 			add.onsuccess = function (event) {
-				//Se abre el modal que avisa al usuario
-				$('#exitoModal').modal('show');
-				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-				var contenidoCentral = document.getElementById("contenidoCentral");
-				contenidoCentral.setAttribute("class","d-block");
-				//Selecciona la zona para poner los formularios
-				var contenidoFormularios = document.getElementById("contenidoFormularios");
-				contenidoFormularios.setAttribute("class","d-none");
-				showHomePage();
-				categoriesMenuPopulate();
+				//Muestra el modal y la pagina de inicio
+				exito();
 			};//FIn de add.onsuccess
 		};//Fin de personDB.onsuccess
 	} catch (error) {
@@ -1272,16 +1259,8 @@ function deleteActor(){
 					//NO HACE NADA
 				}
 			};//FIn de objeto.onsuccess
-			//Se abre el modal que avisa al usuario
-			$('#exitoModal').modal('show');
-			//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-			var contenidoCentral = document.getElementById("contenidoCentral");
-			contenidoCentral.setAttribute("class","d-block");
-			//Selecciona la zona para poner los formularios
-			var contenidoFormularios = document.getElementById("contenidoFormularios");
-			contenidoFormularios.setAttribute("class","d-none");
-			categoriesMenuPopulate();
-			showHomePage();
+			//Muestra el modal y la pagina de inicio
+			exito();
 	};//Fin de actoresDB.onsuccess
 }//Fin de deleteActor
 
@@ -1308,16 +1287,8 @@ function deleteDirector(){
 					//NO HACE NADA
 				}
 			};//FIn de objeto.onsuccess
-			//Se abre el modal que avisa al usuario
-			$('#exitoModal').modal('show');
-			//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-			var contenidoCentral = document.getElementById("contenidoCentral");
-			contenidoCentral.setAttribute("class","d-block");
-			//Selecciona la zona para poner los formularios
-			var contenidoFormularios = document.getElementById("contenidoFormularios");
-			contenidoFormularios.setAttribute("class","d-none");
-			categoriesMenuPopulate();
-			showHomePage();
+			//Muestra el modal y la pagina de inicio
+			exito();
 	};//Fin de directoresDB.onsuccess
 }//Fin de deleteDirector
 
@@ -1574,12 +1545,8 @@ function validarModificacionPerson(rol,objetoPerson){
 							director = directores.next();
 						}//Fin del while
 					}//Fin del if
-					//Se abre el modal que avisa al usuario
-					$('#exitoModal').modal('show');
-					//Si todo ha salido bien vuelve al menu principal
-					showHomePage();
-					contenidoCentral.setAttribute("class","d-block");
-					contenidoFormularios.setAttribute("class","d-none");
+					//Muestra el modal y la pagina de inicio
+					exito();
 					return true;
 				};//Fin del evento update.onsuccess
 			};//Fin de objeto.onsuccess
@@ -2580,16 +2547,8 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 						};//Fin de objectStore.onsuccess
 					};//Fin de actoresDB.onsuccess
 				}//FIn de if que comprueba el array de reparto
-				//Se abre el modal que avisa al usuario
-				$('#exitoModal').modal('show');
-				//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-				var contenidoCentral = document.getElementById("contenidoCentral");
-				contenidoCentral.setAttribute("class","d-block");
-				//Selecciona la zona para poner los formularios
-				var contenidoFormularios = document.getElementById("contenidoFormularios");
-				contenidoFormularios.setAttribute("class","d-none");
-				categoriesMenuPopulate();
-				showHomePage();
+				//Muestra el modal y la pagina de inicio
+				exito();
 				//Se limpia los arrays array
 				while(arrayDir.length != 0){
 					arrayDir.shift();
@@ -2709,16 +2668,8 @@ function deleteProduction(){
 					} catch (error) {
 						//NO HACE NADA
 					}
-					//Se abre el modal que avisa al usuario
-					$('#exitoModal').modal('show');
-					//Selecciona la zona debajo del menu horizontal de edicion y la muestra
-					var contenidoCentral = document.getElementById("contenidoCentral");
-					contenidoCentral.setAttribute("class","d-block");
-					//Selecciona la zona para poner los formularios
-					var contenidoFormularios = document.getElementById("contenidoFormularios");
-					contenidoFormularios.setAttribute("class","d-none");
-					categoriesMenuPopulate();
-					showHomePage();
+					//Muestra el modal y la pagina de inicio
+					exito();
 				};//Fin de operacion.onsuccess
 			};//FIn de objeto.onsuccess
 		};//Fin de produccionesDB.onsuccess
@@ -3013,19 +2964,12 @@ function addNewResource(duration, link, audios, subtitles){
 		var newResource = new Resource(duration, link, audios, subtitles);
 		//EL ARRAY A LA QUE SE AÑADEN LOS RECURSOS ESTA EN js/vs.js AL COMIENZO DEL FICHERO
 		arrayRecursos.push(newResource);
-		//Se abre el modal que avisa al usuario
-		$('#exitoModal').modal('show');
-		//Muestra la pagina principal
-		var contenidoFormularios = document.getElementById("contenidoFormularios");
-		var contenidoCentral = document.getElementById("contenidoCentral");
-		contenidoCentral.setAttribute("class","d-block");
-		contenidoFormularios.setAttribute("class","d-none");
-		showHomePage();
-		categoriesMenuPopulate();
+		//Muestra el modal y la pagina de inicio
+		exito();
 	} catch (error) {
 		//IMPLEMENTAR
 	}
-}//Fin de addNewProduction
+}//Fin de addNewResource
 
 //Elimina una produccion seleccionada
 function deleteResource(){
@@ -3039,16 +2983,23 @@ function deleteResource(){
 			//Si la encuentra asigna el objeto con ese nombre a la variable eliminar
 			arrayRecursos.splice(index,1);
 			encontrado = true;
-			//Se abre el modal que avisa al usuario
-			$('#exitoModal').modal('show');
-			//Muestra la pagina principal
-			var contenidoFormularios = document.getElementById("contenidoFormularios");
-			var contenidoCentral = document.getElementById("contenidoCentral");
-			contenidoCentral.setAttribute("class","d-block");
-			contenidoFormularios.setAttribute("class","d-none");
-			showHomePage();
-			categoriesMenuPopulate();
+			//Muestra el modal y la pagina de inicio
+			exito();
 		}//Fin del if que compara el nombre de la categoria con el valor del select
 		index++;
 	}//Fin del while
-}//Fin de deleteProduction
+}//Fin de deleteResource
+
+//Muestra un modal, quita los formulario y pone la pagina inicla del sistema
+function exito(){
+	//Se abre el modal que avisa al usuario
+	$('#exitoModal').modal('show');
+	//Selecciona la zona debajo del menu horizontal de edicion y la muestra
+	var contenidoCentral = document.getElementById("contenidoCentral");
+	contenidoCentral.setAttribute("class","d-block");
+	//Selecciona la zona para poner los formularios
+	var contenidoFormularios = document.getElementById("contenidoFormularios");
+	contenidoFormularios.setAttribute("class","d-none");
+	categoriesMenuPopulate();
+	showHomePage();
+}//FIn de exito
