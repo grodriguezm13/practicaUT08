@@ -2498,72 +2498,99 @@ function addNewProduction(tipo, titulo, publicacion, nacionalidad, sipnosis, ima
 			};//FIn de add.onerror
 			//Si ha ido bien
 			add.onsuccess = function (event) {
-				//Si se añadido bien comienza a asignar las categorias, director y reparto
-				var categoriasDB = indexedDB.open(nombreDB);
-				categoriasDB.onsuccess = function(event) {
-					var db = event.target.result;
-					var objectStore = db.transaction(["categorias"],"readonly").objectStore("categorias");
-					for (var i in arrayCategorias) {
-						try {
-							video.assignCategory(objectStore.get(arrayCategorias[i].result,objetoProduction));
-						} catch (error) {
-							document.getElementById("catMal").innerHTML = "Ha ocurrido un problema al añadir categorias a la producción";
-							document.getElementById("catMal").style.display = "block";
-						}
-					}
-				};//Fin de categoriasDB.onsuccess
 
-				//Abre la conexion con la base de datos directores
-				var directoresDB = indexedDB.open(nombreDB);
-				directoresDB.onsuccess = function(event) {
-					var db = event.target.result;
-					var objectStore = db.transaction(["directores"],"readwrite").objectStore("directores");
-					objectStore.onsuccess = function(event) {
-						for (var i in arrayDir) {
-							var objeto = objectStore.get(arrayDir[i]);
-							try {
-								video.assignDirector(objeto.result,objetoProduction);
-							} catch (error) {
-								document.getElementById("directorMal").innerHTML = "El director ya tiene asignada esa producción";
-								document.getElementById("directorMal").style.display = "block";
+				//AÑADE LA PRODUCCION A LAS CATEGORIAS 
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["categoryPro"],"readwrite").objectStore("categoryPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							for (let i = 0; i < arrayProducciones.length; i++) {
+								if(cursor.value.category == arrayProducciones[i]){
+									//añade la produccion del array
+									cursor.value.productions.push(objetoProduction.getObject());
+								}
 							}
-						}
-					};//Fin de objectStore.onsuccess
-				};//Fin de directoresDB.onsuccess
+							var nuevo = { category: cursor.value.category , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa a la siguiente categoria
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
+
+				//AÑADE EL DIRECTOR A LA PRODUCCION
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							//for (let i = 0; i < cursor.value.productions.length; i++) {
+								if(cursor.value.completo == arrayDir[0]){
+									//añade la produccion del array
+									cursor.value.productions.push(objetoProduction.getObject());
+								}
+							//}
+							var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa al siguiente director
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
+
 				//Se asignan el reparto a la produccion si hay
 				if (arrayReparto.length > 0) {
-					//Abre la conexion con la base de datos actores
-					var actoresDB = indexedDB.open(nombreDB);
-					actoresDB.onsuccess = function(event) {
-						var db = event.target.result;
-						var objectStore = db.transaction(["actores"],"readonly").objectStore("actores");
-						objectStore.onsuccess = function(event) {
-							for (var i in arrayReparto) {
-								var objeto = objectStore.get(arrayReparto[i]);
-								//Recoge el papel del actor, y si es principal o no
-								var papel = document.forms["addProduction"]["papel"+index+""].value;
-								var principal = document.forms["addProduction"]["principal"+index+""].checked;
-								try {
-									//Si coincide lo añade a la produccion
-									video.assignActor(objeto.result,objetoProduction,papel,principal);
-								} catch (error) {
-									//NO HACE NADA
+					//AÑADE EL REPARTO DE LA PRODUCCION
+					var request = indexedDB.open(nombreDB);
+					//Si ha salido bien
+					request.onsuccess = function(event) {
+						//Asigna el resultado a la variable db, que tiene la base de datos 
+						var db = event.target.result;         
+						var objectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
+						//Abre un cursor para recorrer todos los objetos de la base de datos 
+						objectStore.openCursor().onsuccess = function(event) {
+							var cursor = event.target.result;
+							if(cursor){
+								for (let i = 0; i < arrayReparto.length; i++) {
+									if(cursor.value.completo == arrayReparto[i]){
+										//Recoge el papel del actor, y si es principal o no
+										var papel = document.forms["addProduction"]["papel"+index+""].value;
+										var principal = document.forms["addProduction"]["principal"+index+""].checked;
+										//añade la produccion del array
+										cursor.value.productions.push({produccion: objetoProduction.getObject(), papel: papel, principal: principal});
+									}
 								}
-							}//Fin del for
-						};//Fin de objectStore.onsuccess
-					};//Fin de actoresDB.onsuccess
+								var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+								cursor.update(nuevo);
+								//Pasa al siguiente director
+								cursor.continue();
+							}//Fin del if
+						};		
+					};
+					while(arrayReparto.length != 0){
+						arrayReparto.shift();
+					}
 				}//FIn de if que comprueba el array de reparto
+			
 				//Muestra el modal y la pagina de inicio
-				exito();
+				setTimeout(exito,1000);
 				//Se limpia los arrays array
 				while(arrayDir.length != 0){
 					arrayDir.shift();
 				}
 				while(arrayCategorias.length != 0){
 					arrayCategorias.shift();
-				}
-				while(arrayReparto.length != 0){
-					arrayReparto.shift();
 				}
 			};//FIn de add.onsuccess
 		};//Fin de produccionesDB.onsuccess

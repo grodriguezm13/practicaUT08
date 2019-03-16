@@ -10,6 +10,9 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.3.2
+- Al eliminar producciones se hacen de todas las tablas de la base de datos
+
 Version 0.3.1
 - Las modificaciones, eliminado y añadido de directores, actores y categorias se hacen sobre la base de datos
 
