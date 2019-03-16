@@ -705,21 +705,28 @@ function validarModificacionCategoria(objetoCategoria){
 					if (nuevo.name != objetoCategoria.name) {
 						objectStore.delete(objetoCategoria.name);
 					}
-					var encontrado = false;
-					var categorias = video.categories;
-					var categoria = categorias.next();
-					while ((categoria.done !== true) && (!encontrado)){
-						if (categoria.value.name == objetoCategoria.name) {
-							//Se cambian los parametros del objeto que hay en el array del videosystem
-							//para que mientras que no se recargue la pagina las producciones sigan apareciendo en la nueva
-							categoria.value.name = nombre.value;
-							categoria.value.description = descript.value;
-							encontrado = true;
-						}
-						categoria = categorias.next();
-					}//Fin del while
-					//Muestra el modal y la pagina de inicio
-					exito();
+					//Abre la conexion con la base de datos
+					var request2 = indexedDB.open(nombreDB);
+					//Si ha salido bien
+					request2.onsuccess = function(event) {
+						//Asigna el resultado a la variable db, que tiene la base de datos 
+						var db2 = event.target.result;         
+						var objectStore2 = db2.transaction(["categoryPro"],"readwrite").objectStore("categoryPro");
+						//Obtiene el objeto de la base de datos
+						var objeto2 = objectStore2.get(objetoCategoria.name);
+						objeto2.onsuccess = function(event) {
+							var nuevo2 = objeto2.result;	
+							nuevo2.category = nombre.value;					
+							//Se manda la actualizacion a la base de datos
+							var update2 = objectStore2.put(nuevo2);
+							update2.onsuccess = function(){
+								//Borra el antiguo para que no haya duplicados
+								objectStore2.delete(objetoCategoria.name);
+								//Muestra el modal y la pagina de inicio
+								exito();
+							};
+						};
+					};
 				};//Fin del evento update.onsuccess
 			};//Fin de objeto.onsuccess
 		};//FIn de request.onsuccess
@@ -1241,7 +1248,7 @@ function deleteActor(){
 	//Recoge el valor del boton pulsado
 	var act = this.value;
 	/* LINEAS AÑADIDAS EN LA PRACTICA 8 */
-	//Abre la conexion con la base de datos categorias
+	//Abre la conexion con la base de datos
 	var actoresDB = indexedDB.open(nombreDB);
 	//Si ha salido bien
 	actoresDB.onsuccess = function(event) { 
@@ -1252,15 +1259,20 @@ function deleteActor(){
 				var objetoActor = new Person (objeto.result.name, objeto.result.lastName1, objeto.result.born, objeto.result.lastName2, objeto.result.picture);
 				//Se elimina por el key path
 				deleteObjectStore.delete(objetoActor.completo);
-				try {
-					//Elimina el objeto que se ha encontrado del sistema
-					video.removeActor(objetoActor);
-				} catch (error) {
-					//NO HACE NADA
-				}
+				//Abre la conexion con la base de datos
+				var actoresDB = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				actoresDB.onsuccess = function(event) { 
+						var db = event.target.result;        
+						var deleteObjectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
+						var borrar = deleteObjectStore.delete(objetoActor.completo);
+						borrar.onsuccess = function(event) {
+							//Muestra el modal y la pagina de inicio
+							exito();
+						};
+				};
 			};//FIn de objeto.onsuccess
-			//Muestra el modal y la pagina de inicio
-			exito();
+			
 	};//Fin de actoresDB.onsuccess
 }//Fin de deleteActor
 
@@ -1280,15 +1292,19 @@ function deleteDirector(){
 				var objetoDirector = new Person (objeto.result.name, objeto.result.lastName1, objeto.result.born, objeto.result.lastName2, objeto.result.picture);
 				//Se elimina por el key path
 				deleteObjectStore.delete(objetoDirector.completo);
-				try {
-					//Elimina el objeto que se ha encontrado del sistema
-					video.removeDirector(objetoDirector);
-				} catch (error) {
-					//NO HACE NADA
-				}
+				//Abre la conexion con la base de datos
+				var directoresDB = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				directoresDB.onsuccess = function(event) { 
+						var db = event.target.result;        
+						var deleteObjectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
+						var borrar = deleteObjectStore.delete(objetoDirector.completo);
+						borrar.onsuccess = function(event) {
+							//Muestra el modal y la pagina de inicio
+							exito();
+						};
+				};
 			};//FIn de objeto.onsuccess
-			//Muestra el modal y la pagina de inicio
-			exito();
 	};//Fin de directoresDB.onsuccess
 }//Fin de deleteDirector
 
@@ -1510,44 +1526,34 @@ function validarModificacionPerson(rol,objetoPerson){
 					if (nuevo.completo != objetoPerson.completo) {
 						objectStore.delete(objetoPerson.completo);
 					}
+					var tabla = "";
 					if (rol == "Actor") {
-						var encontrado = false;
-						var actores = video.actors;
-						var actor = actores.next();
-						while ((actor.done !== true) && (!encontrado)){
-							if (actor.value.completo == objetoPerson.completo) {
-								//Se cambian los parametros del objeto que hay en el array del videosystem
-								//para que mientras que no se recargue la pagina las producciones sigan apareciendo en la nueva
-								actor.value.lastName1 = lastName1.value;
-								actor.value.lastName2 = lastName2.value;
-								actor.value.born = fecha;
-								actor.value.picture = picture.value;
-								actor.value.completo = nombre.value+" "+lastName1.value+" "+lastName2.value;
-								encontrado = true;
-							}
-							actor = actores.next();
-						}//Fin del while
+						tabla = "repartoPro";
 					}else{
-						var encontrado = false;
-						var directores = video.directors;
-						var director = directores.next();
-						while ((director.done !== true) && (!encontrado)){
-							if (director.value.completo == objetoPerson.completo) {
-								//Se cambian los parametros del objeto que hay en el array del videosystem
-								//para que mientras que no se recargue la pagina las producciones sigan apareciendo en la nueva
-								director.value.lastName1 = lastName1.value;
-								director.value.lastName2 = lastName2.value;
-								director.value.born = fecha;
-								director.value.picture = picture.value;
-								director.value.completo = nombre.value+" "+lastName1.value+" "+lastName2.value;
-								encontrado = true;
-							}
-							director = directores.next();
-						}//Fin del while
+						tabla = "directorPro";
 					}//Fin del if
-					//Muestra el modal y la pagina de inicio
-					exito();
-					return true;
+					//Abre la conexion con la base de datos
+					var request2 = indexedDB.open(nombreDB);
+					//Si ha salido bien
+					request2.onsuccess = function(event) {
+						//Asigna el resultado a la variable db, que tiene la base de datos 
+						var db2 = event.target.result;         
+						var objectStore2 = db2.transaction([tabla],"readwrite").objectStore(tabla);
+						//Obtiene el objeto de la base de datos
+						var objeto2 = objectStore2.get(objetoPerson.completo);
+						objeto2.onsuccess = function(event) {
+							var nuevo2 = objeto2.result;
+							nuevo2.completo = nombre.value+" "+lastName1.value+" "+lastName2.value;					
+							//Se manda la actualizacion a la base de datos
+							var update2 = objectStore2.put(nuevo2);
+							update2.onsuccess = function(){
+								//Borra el antiguo para que no haya duplicados
+								objectStore2.delete(objetoPerson.completo);
+								//Muestra el modal y la pagina de inicio
+								exito();
+							};
+						};
+					};
 				};//Fin del evento update.onsuccess
 			};//Fin de objeto.onsuccess
 		};//FIn de request.onsuccess	
@@ -2583,83 +2589,83 @@ function deleteProduction(){
 				}else{
 					objetoProduccion = new Serie (objeto.result.title, objeto.result.publication, objeto.result.nationality, objeto.result.synopsis, objeto.result.image, objeto.result.season);
 				}
-				//Se recorre todas las categorias para quitar la produccion 
-				var categorias = video.categories;
-				var categoria = categorias.next();
-				while (categoria.done !== true){
-					try {
-						//Intenta coger del iterador las categorias, si se ha recargado se pierde
-						//Por lo tanto da error y no elimina la produccion
-						//Se recorren las producciones de esa categoria
-						var productions = video.getProductionsCategory(categoria.value);
-						var production = productions.next();
-						while (production.done !== true){
-							//Si la produccion de esa categoria coincide con el titulo de la producion que vamos a eliminar
-							//las desasigna de todas las categorias en las que este
-							if(production.value.title == objetoProduccion.title){
-								try {
-									video.deassignCategory(categoria.value,production.value);
-								} catch (error) {
-									//NO HACE NADA
-								}	
-							}
-							production = productions.next();
-						}//Fin del while de las producciones
-						categoria = categorias.next();
-					} catch (error) {
-						//NO HACE NADA 
-					}
-				}//FIn del while de las categorias
-				//Se recorren los directores para quitar la produccion que vamos a eliminar
-				//Muestra las producciones en las que esta asignado el actor
-				var directores = video.directors;
-				var director = directores.next();
-				//Recorre todos los directores del sistema
-				while (director.done !== true){
-					try {
-						//Intenta coger del iterador las producciones del director, si se ha recargado se pierde
-						//Por lo tanto da error y no elimina la produccion
-						//Para cada director hace un iterador con sus producciones
-						var productions = video.getProductionsDirector(director.value);
-						var production = productions.next();
-						while (production.done !== true){
-							//Si la produccion de ese director coincide con el titulo de la producion que vamos a eliminar
-							if(production.value.title == objetoProduccion.title){
-								try {
-									video.deassignDirector(director.value,production.value);
-								} catch (error) {
-									//NO HACE NADA
+				
+				//ELIMINA LA PRODUCCION DE LAS CATEGORIAS EN LAS QUE ESTE
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["categoryPro"],"readwrite").objectStore("categoryPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							for (let i = 0; i < cursor.value.productions.length; i++) {
+								if(cursor.value.productions[i].title == objetoProduccion.title){
+									//Borra la produccion del array
+									cursor.value.productions.splice(i,1);
 								}
 							}
-							//Pasa a la siguiente produccion del director
-							production = productions.next();
-						}//Fin del while de las producciones del director
-						//Pasa al siguiente director
-						director = directores.next();
-					} catch (error) {
-						//NO HACE NADA
-					}
-				}//Fin del while de los directores
+							var nuevo = { category: cursor.value.category , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa a la siguiente categoria
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
 
-				//Si se ha recargado la pagina, el sistema no encontrara la produccion aunque este en la base de datos
-				try {
-					//Obtiene todo el reparto de la produccion
-					var elenco = video.getCast(objetoProduccion);
-					var actor = elenco.next();
-					while (actor.done !== true){
-						try {
-							//Quitamos al actor de la produccion
-							video.deassignActor(actor.value,objetoProduccion);
-						} catch (error) {
-							//NO HACE NADA	
-						}		
-						actor = elenco.next();
-					}//Fin del while
-				} catch (error) {
-					//NO HACE NADA
-				}
-				
-				//Se elimina por el key path
+				//ELIMINA LA PRODUCCION DEL DIRECTOR QUE LA TENGA
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["directorPro"],"readwrite").objectStore("directorPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							for (let i = 0; i < cursor.value.productions.length; i++) {
+								if(cursor.value.productions[i].title == objetoProduccion.title){
+									//Borra la produccion del array
+									cursor.value.productions.splice(i,1);
+								}
+							}
+							var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa al siguiente director
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
+
+				//ELIMINA LA PRODUCCION DEL REPARTO QUE TENGA
+				var request = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				request.onsuccess = function(event) {
+					//Asigna el resultado a la variable db, que tiene la base de datos 
+					var db = event.target.result;         
+					var objectStore = db.transaction(["repartoPro"],"readwrite").objectStore("repartoPro");
+					//Abre un cursor para recorrer todos los objetos de la base de datos 
+					objectStore.openCursor().onsuccess = function(event) {
+						var cursor = event.target.result;
+						if(cursor){
+							for (let i = 0; i < cursor.value.productions.length; i++) {
+								if(cursor.value.productions[i].produccion.title == objetoProduccion.title){
+									//Borra la produccion del array
+									cursor.value.productions.splice(i,1);
+								}
+							}
+							var nuevo = { completo: cursor.value.completo , productions: cursor.value.productions};
+							cursor.update(nuevo);
+							//Pasa al siguiente director
+							cursor.continue();
+						}//Fin del if
+					};		
+				};
+
+				//SE ELIMINA DE LA TABLA DE PRODUCCIONES
 				var operacion = deleteObjectStore.delete(objetoProduccion.title);
 				operacion.onsuccess = function (event) {
 					try {
@@ -2669,7 +2675,7 @@ function deleteProduction(){
 						//NO HACE NADA
 					}
 					//Muestra el modal y la pagina de inicio
-					exito();
+					setTimeout(exito,1000);
 				};//Fin de operacion.onsuccess
 			};//FIn de objeto.onsuccess
 		};//Fin de produccionesDB.onsuccess

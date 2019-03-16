@@ -10,6 +10,9 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.3.1
+- Las modificaciones, eliminado y añadido de directores, actores y categorias se hacen sobre la base de datos
+
 Version 0.3
 - Se han creado las bases de datos con la relacion entre los objetos del sistema
 - Se ha creado una funcion para mostrar el modal y la pagina de inicio
