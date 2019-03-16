@@ -10,6 +10,9 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.3.4
+- Solucionado un problema al mostrar los recursos de una produccion
+
 Version 0.3.3
 - Al añadir actores o directores tambien se añaden a la tabla de relaciones
 

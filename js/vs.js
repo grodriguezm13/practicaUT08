@@ -1283,90 +1283,99 @@ function showResource(){
 	ventana.document.title = "Recursos de " + tituloProduccion.textContent;
 
 	var encontrado = false;
-	var producciones = video.productions;
-	var produccion = producciones.next();
-	while ((produccion.done !== true) && (!encontrado)){
-		//Compara el titulo de la produccion del iterador con el titulo que hay en el h2 de la tarjeta
-		if (produccion.value.title == tituloProduccion.textContent) {
-			//Si la produccion es una movie tendra unos parametros distintos a las series
-			if(produccion.value instanceof Movie){
-				//Si es distinto de null pone el recurso de la produccion
-				if(produccion.value.resource != null){
-					
-					var duration = document.createElement("p");
-					duration.setAttribute("class","cajaTitulo");
-					duration.appendChild(document.createTextNode("Duracion: "));
-					var durationDescript = document.createElement("p");
-					durationDescript.setAttribute("class","cajaDescripcion");
-					durationDescript.appendChild(document.createTextNode(produccion.value.resource.duration+" minutos"));
-					var audio = document.createElement("p");
-					audio.setAttribute("class","cajaTitulo");
-					audio.appendChild(document.createTextNode("Audio: "));
-					var audioDescript = document.createElement("p");
-					audioDescript.setAttribute("class","cajaDescripcion");
-					audioDescript.appendChild(document.createTextNode(produccion.value.resource.audios));
-					var subtitles = document.createElement("p");
-					subtitles.setAttribute("class","cajaTitulo");
-					subtitles.appendChild(document.createTextNode("Subtitulos: "));
-					var subtitlesDescript = document.createElement("p");
-					subtitlesDescript.setAttribute("class","cajaDescripcion");
-					subtitlesDescript.appendChild(document.createTextNode(produccion.value.resource.subtitles));
-					var link = document.createElement("p");
-					link.setAttribute("class","cajaTitulo");
-					link.appendChild(document.createTextNode("Enlaces: "));
-					var linkDescript = document.createElement("p");
-					linkDescript.setAttribute("class","cajaDescripcion");
-					var linkHref = document.createElement("a");
-					linkHref.setAttribute("href",produccion.value.resource.link);
-					linkHref.appendChild(document.createTextNode(produccion.value.resource.link));
-					linkDescript.appendChild(linkHref);
-				}
-				//Si es distinto de null pone la localizacion de la produccion
-				if(produccion.value.locations != null){
-					var locations = document.createElement("p");
-					locations.setAttribute("class","cajaTitulo");
-					locations.appendChild(document.createTextNode("Localizacion:"));
-					var locationsDescript = document.createElement("p");
-					locationsDescript.setAttribute("class","cajaDescripcion");
-					locationsDescript.appendChild(document.createTextNode(produccion.value.locations));
-				}
-			}//Fin del if del instanceof
+	var request = indexedDB.open(nombreDB);
+	//Si ha salido bien
+	request.onsuccess = function(event) {
+		//Asigna el resultado a la variable db, que tiene la base de datos 
+		var db = event.target.result;         
+		var objectStore = db.transaction(["producciones"],"readwrite").objectStore("producciones");
+		//Abre un cursor para recorrer todos los objetos de la base de datos 
+		objectStore.openCursor().onsuccess = function(event) {
+			var cursor = event.target.result;
+			if((cursor) && (!encontrado)){
+				//Compara el titulo de la produccion del iterador con el titulo que hay en el h2 de la tarjeta
+				if (cursor.value.title == tituloProduccion.textContent) {
+					//Si la produccion es una movie tendra unos parametros distintos a las series
+					if(cursor.value.tipo == "Movie"){
+						//Si es distinto de null pone el recurso de la produccion
+						if(cursor.value.resource != null){
+							
+							var duration = document.createElement("p");
+							duration.setAttribute("class","cajaTitulo");
+							duration.appendChild(document.createTextNode("Duracion: "));
+							var durationDescript = document.createElement("p");
+							durationDescript.setAttribute("class","cajaDescripcion");
+							durationDescript.appendChild(document.createTextNode(cursor.value.resource.duration+" minutos"));
+							var audio = document.createElement("p");
+							audio.setAttribute("class","cajaTitulo");
+							audio.appendChild(document.createTextNode("Audio: "));
+							var audioDescript = document.createElement("p");
+							audioDescript.setAttribute("class","cajaDescripcion");
+							audioDescript.appendChild(document.createTextNode(cursor.value.resource.audios));
+							var subtitles = document.createElement("p");
+							subtitles.setAttribute("class","cajaTitulo");
+							subtitles.appendChild(document.createTextNode("Subtitulos: "));
+							var subtitlesDescript = document.createElement("p");
+							subtitlesDescript.setAttribute("class","cajaDescripcion");
+							subtitlesDescript.appendChild(document.createTextNode(cursor.value.resource.subtitles));
+							var link = document.createElement("p");
+							link.setAttribute("class","cajaTitulo");
+							link.appendChild(document.createTextNode("Enlaces: "));
+							var linkDescript = document.createElement("p");
+							linkDescript.setAttribute("class","cajaDescripcion");
+							var linkHref = document.createElement("a");
+							linkHref.setAttribute("href",cursor.value.resource.link);
+							linkHref.appendChild(document.createTextNode(cursor.value.resource.link));
+							linkDescript.appendChild(linkHref);
+						}
+						//Si es distinto de null pone la localizacion de la produccion
+						if(cursor.value.locations != null){
+							var locations = document.createElement("p");
+							locations.setAttribute("class","cajaTitulo");
+							locations.appendChild(document.createTextNode("Localizacion:"));
+							var locationsDescript = document.createElement("p");
+							locationsDescript.setAttribute("class","cajaDescripcion");
+							locationsDescript.appendChild(document.createTextNode("Longitud: "+cursor.value.locations.longitude+". Latitud: "+cursor.value.locations.latitude));
+						}
+					}//Fin del if del instanceof
 
-			//Pinta todo en la nueva ventana
-			var tituloProdu = ventana.document.getElementById("tituloZona");
-			tituloProdu.innerHTML = tituloProduccion.textContent;
-			if(produccion.value.resource != null){
-				contenidoVentana.appendChild(duration);
-				contenidoVentana.appendChild(durationDescript);
-				contenidoVentana.appendChild(audio);
-				contenidoVentana.appendChild(audioDescript);
-				contenidoVentana.appendChild(subtitles);
-				contenidoVentana.appendChild(subtitlesDescript);
-				contenidoVentana.appendChild(link);
-				contenidoVentana.appendChild(linkDescript);
-			}
-			if(produccion.value.locations != null){
-				contenidoVentana.appendChild(locations);
-				contenidoVentana.appendChild(locationsDescript);
-			}
-			if(produccion.value.season != null){
-				//Si tiene temporadas las muestra
-				for (let index = 0; index < produccion.value.season.length; index++) {
-					var season = document.createElement("p");
-					season.setAttribute("class","cajaTitulo");
-					season.appendChild(document.createTextNode("Temporada "+(index+1)+":"));
-					var seasonDescrip = document.createElement("p");
-					seasonDescrip.setAttribute("class","cajaDescripcion");
-					seasonDescrip.appendChild(document.createTextNode(produccion.value.season[index].episodes));
-					contenidoVentana.appendChild(season);
-					contenidoVentana.appendChild(seasonDescrip);	
-				}//Fin del for
-			}//Fin del if de season	
-		}//Fin del if
-		//Pasa a la siguiente produccion
-		produccion = producciones.next();
-	}//Fin del while
-
+					//Pinta todo en la nueva ventana
+					var tituloProdu = ventana.document.getElementById("tituloZona");
+					tituloProdu.innerHTML = tituloProduccion.textContent;
+					if(cursor.value.resource != null){
+						contenidoVentana.appendChild(duration);
+						contenidoVentana.appendChild(durationDescript);
+						contenidoVentana.appendChild(audio);
+						contenidoVentana.appendChild(audioDescript);
+						contenidoVentana.appendChild(subtitles);
+						contenidoVentana.appendChild(subtitlesDescript);
+						contenidoVentana.appendChild(link);
+						contenidoVentana.appendChild(linkDescript);
+					}
+					if(cursor.value.locations != null){
+						contenidoVentana.appendChild(locations);
+						contenidoVentana.appendChild(locationsDescript);
+					}
+					if(cursor.value.season != null){
+						//Si tiene temporadas las muestra
+						for (let index = 0; index < cursor.value.season.length; index++) {
+							var season = document.createElement("p");
+							season.setAttribute("class","cajaTitulo");
+							season.appendChild(document.createTextNode("Temporada "+(index+1)+":"));
+							var seasonDescrip = document.createElement("p");
+							seasonDescrip.setAttribute("class","cajaDescripcion");
+							seasonDescrip.appendChild(document.createTextNode(cursor.value.season[index].episodes));
+							contenidoVentana.appendChild(season);
+							contenidoVentana.appendChild(seasonDescrip);	
+						}//Fin del for
+					}//Fin del if de season	
+					encontrado = true;
+				}//Fin del if
+				//Pasa a la siguiente categoria
+				cursor.continue();
+			}//Fin del if
+		};		
+	};
 }//Fin de showResource
 
 //Funcion que llama a todas las funciones que necesita el sistema
