@@ -1229,8 +1229,24 @@ function addNewPerson(rol,name, lastName1, born, lastName2, picture){
 			};//FIn de add.onerror
 			//Si el añadido ha sido bueno
 			add.onsuccess = function (event) {
-				//Muestra el modal y la pagina de inicio
-				exito();
+				if (rol == "Actor") {
+					base = "repartoPro";
+				}else{
+					base = "directorPro";
+				}
+				//Abre la conexion con la base de datos
+				var personDB = indexedDB.open(nombreDB);
+				//Si ha salido bien
+				personDB.onsuccess = function(event) { 
+					var db = event.target.result;        
+					var addObjectStore = db.transaction([base],"readwrite").objectStore(base);
+					//Añade esa person a la base de datos
+					var add = addObjectStore.add({completo: newPerson.completo, productions: []});
+					add.onsuccess = function (event) {
+						//Muestra el modal y la pagina de inicio
+						exito();
+					};
+				};
 			};//FIn de add.onsuccess
 		};//Fin de personDB.onsuccess
 	} catch (error) {

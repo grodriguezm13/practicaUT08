@@ -10,6 +10,9 @@ Guillermo Rodríguez Moraga
 
 ## Versiones
 
+Version 0.3.3
+- Al añadir actores o directores tambien se añaden a la tabla de relaciones
+
 Version 0.3.2
 - Al eliminar producciones se hacen de todas las tablas de la base de datos
 
